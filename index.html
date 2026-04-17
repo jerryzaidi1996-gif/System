@@ -816,49 +816,76 @@ button, .tab-btn, .quest-card, .ach-card, .shadow-card,
     padding: 10px 10px 12px;
   }
 
+  /* === QUEST ROW: two-tier mobile layout === */
+  /* Tier 1: badge(s) + quest name (top, flex row, can wrap)
+     Tier 2: action buttons (bottom, right-aligned, own row)        */
   .quest-row {
+    display: flex;
+    flex-direction: column;          /* stack info on top, actions below */
+    align-items: stretch;
     gap: 8px;
     padding: 10px 11px 10px 13px;
-    flex-wrap: wrap;       /* allow actions/meta to wrap below if needed */
   }
 
   .quest-info {
-    gap: 8px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;                 /* difficulty badge can wrap with name */
+    gap: 6px 8px;
     flex: 1 1 auto;
     min-width: 0;
+    width: 100%;
   }
 
   .quest-name {
     font-size: 12.5px;
     letter-spacing: 0.02em;
     line-height: 1.35;
-    white-space: normal;       /* allow full text to show on multiple lines */
+    white-space: normal;             /* allow full text to wrap */
     overflow: visible;
     text-overflow: clip;
     word-break: break-word;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .difficulty {
     font-size: 8px;
     padding: 2px 6px;
     letter-spacing: 0.22em;
+    flex-shrink: 0;
   }
 
   .due-time {
     font-size: 8.5px;
     padding: 2px 5px;
     letter-spacing: 0.15em;
+    flex-shrink: 0;
   }
 
+  /* Action buttons: their own row, right-aligned with subtle separator */
   .quest-actions {
-    gap: 5px;
+    display: flex;
+    justify-content: flex-end;       /* push buttons to right */
+    align-items: center;
+    gap: 8px;
     flex-shrink: 0;
+    padding-top: 6px;
+    margin-top: 2px;
+    border-top: 1px solid rgba(92, 230, 240, 0.08);
   }
 
   .quest-actions button,
   .quest-actions .delete-btn {
-    padding: 5px 8px;
-    font-size: 9.5px;
+    padding: 6px 14px;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+  }
+
+  /* Make the warning/delete icon button a consistent circular shape */
+  .quest-actions .delete-btn {
+    padding: 6px 10px;
+    min-width: 36px;
   }
 
   .panel-meta,
@@ -879,11 +906,12 @@ button, .tab-btn, .quest-card, .ach-card, .shadow-card,
   .app { padding: 12px 8px 110px; }
   .panel-header { padding: 10px 10px; }
   .panel-body { padding: 9px 8px 11px; }
-  .quest-row { padding: 9px 10px 9px 12px; gap: 6px; }
+  .quest-row { padding: 9px 10px 9px 12px; gap: 7px; }
   .quest-name { font-size: 12px; }
   .difficulty { font-size: 7.5px; padding: 2px 5px; }
   .quest-actions button,
-  .quest-actions .delete-btn { padding: 4px 7px; font-size: 9px; }
+  .quest-actions .delete-btn { padding: 5px 12px; font-size: 9.5px; }
+  .quest-actions .delete-btn { padding: 5px 9px; min-width: 32px; }
 }
 
 /* ============ MODAL OVERLAY (ADD QUEST) ============ */
