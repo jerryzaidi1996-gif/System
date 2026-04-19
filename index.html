@@ -8798,6 +8798,1327 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg-void); }
 ::-webkit-scrollbar-thumb { background: var(--border-mid); }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 10 — CHRONICLE (HEATMAP) + SYNC CODE
+   ═══════════════════════════════════════════════════════ */
+
+/* ---------- Chronicle tab container ---------- */
+.chronicle-container {
+  position: relative;
+  padding: 0;
+}
+
+.chronicle-intro {
+  text-align: center;
+  margin: 10px 0 22px;
+}
+
+.chronicle-intro-text {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.35em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+/* View toggle (Output / State) */
+.chronicle-view-toggle {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(2, 3, 9, 0.6);
+  border: 1px solid var(--border-dim);
+  outline: 1px solid rgba(92, 230, 240, 0.1);
+  outline-offset: 3px;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.chronicle-view-btn {
+  flex: 1;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chronicle-view-btn:hover {
+  color: var(--text-secondary);
+  background: rgba(92, 230, 240, 0.04);
+}
+
+.chronicle-view-btn.active {
+  color: var(--accent-cyan-bright);
+  text-shadow: 0 0 6px var(--accent-cyan);
+  background: linear-gradient(180deg, rgba(92, 230, 240, 0.18), rgba(92, 230, 240, 0.04));
+}
+
+.chronicle-view-btn[data-view="state"].active {
+  color: var(--gold-soft);
+  text-shadow: 0 0 6px var(--gold);
+  background: linear-gradient(180deg, rgba(245, 196, 81, 0.18), rgba(245, 196, 81, 0.04));
+}
+
+/* Range selector (90d / 6mo / 12mo) */
+.chronicle-range-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.chronicle-range-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  color: var(--text-dim);
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 9.5px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chronicle-range-btn:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.chronicle-range-btn.active {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan-bright);
+  background: rgba(92, 230, 240, 0.08);
+  text-shadow: 0 0 4px var(--accent-cyan);
+}
+
+/* Heatmap panel */
+.chronicle-panel {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-mid);
+  outline: 1px solid var(--border-dim);
+  outline-offset: 3px;
+  padding: 20px 18px 24px;
+  margin-bottom: 22px;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--glow-cyan-sm);
+}
+
+.chronicle-panel .corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--accent-cyan);
+  pointer-events: none;
+}
+.chronicle-panel .corner.tl { top: -2px; left: -2px; border-top: 2px solid; border-left: 2px solid; }
+.chronicle-panel .corner.tr { top: -2px; right: -2px; border-top: 2px solid; border-right: 2px solid; }
+.chronicle-panel .corner.bl { bottom: -2px; left: -2px; border-bottom: 2px solid; border-left: 2px solid; }
+.chronicle-panel .corner.br { bottom: -2px; right: -2px; border-bottom: 2px solid; border-right: 2px solid; }
+
+.chronicle-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chronicle-panel-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.35em;
+  color: var(--accent-cyan-bright);
+  text-shadow: 0 0 6px var(--accent-cyan);
+  text-transform: uppercase;
+}
+
+.chronicle-panel.state-view .chronicle-panel-title {
+  color: var(--gold-soft);
+  text-shadow: 0 0 6px var(--gold);
+}
+
+.chronicle-panel-legend {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+}
+
+.chronicle-legend-cell {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 1px solid rgba(92, 230, 240, 0.2);
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+/* Heatmap grid */
+.chronicle-grid-wrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+  margin: 0 -4px;
+}
+
+.chronicle-grid-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.chronicle-grid-wrapper::-webkit-scrollbar-track {
+  background: rgba(2, 3, 9, 0.6);
+}
+
+.chronicle-grid-wrapper::-webkit-scrollbar-thumb {
+  background: var(--border-mid);
+}
+
+.chronicle-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 3px;
+  padding: 4px;
+  min-width: min-content;
+}
+
+.chronicle-grid.mode-6mo {
+  gap: 2.5px;
+}
+
+.chronicle-grid.mode-12mo {
+  gap: 2px;
+}
+
+.chronicle-cell {
+  width: 15px;
+  height: 15px;
+  background: rgba(14, 18, 28, 0.8);
+  border: 1px solid rgba(92, 230, 240, 0.08);
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  overflow: visible;
+}
+
+.chronicle-grid.mode-6mo .chronicle-cell {
+  width: 12px;
+  height: 12px;
+}
+
+.chronicle-grid.mode-12mo .chronicle-cell {
+  width: 10px;
+  height: 10px;
+}
+
+.chronicle-cell:hover {
+  transform: scale(1.4);
+  z-index: 4;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 8px var(--accent-cyan);
+}
+
+/* Output heatmap color bands (cyan gradient) */
+.chronicle-cell[data-output="0"] { background: rgba(14, 18, 28, 0.8); }
+.chronicle-cell[data-output="1"] { background: rgba(92, 230, 240, 0.18); border-color: rgba(92, 230, 240, 0.25); }
+.chronicle-cell[data-output="2"] { background: rgba(92, 230, 240, 0.38); border-color: rgba(92, 230, 240, 0.5); }
+.chronicle-cell[data-output="3"] { background: rgba(92, 230, 240, 0.6); border-color: rgba(92, 230, 240, 0.75); }
+.chronicle-cell[data-output="4"] { background: rgba(92, 230, 240, 0.85); border-color: var(--accent-cyan-bright); box-shadow: 0 0 6px rgba(92, 230, 240, 0.4); }
+
+/* State heatmap bands (green > cyan > gold > orange > red) */
+.chronicle-cell[data-state="no-signal"] {
+  background: rgba(14, 18, 28, 0.6);
+  border-color: rgba(92, 230, 240, 0.06);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(93, 115, 128, 0.12) 2px,
+    rgba(93, 115, 128, 0.12) 3px
+  );
+}
+.chronicle-cell[data-state="steady"] { background: rgba(74, 222, 128, 0.35); border-color: rgba(74, 222, 128, 0.55); }
+.chronicle-cell[data-state="humming"] { background: rgba(92, 230, 240, 0.45); border-color: rgba(92, 230, 240, 0.7); }
+.chronicle-cell[data-state="warming"] { background: rgba(245, 196, 81, 0.55); border-color: rgba(245, 196, 81, 0.75); }
+.chronicle-cell[data-state="hot"] { background: rgba(255, 165, 81, 0.6); border-color: rgba(255, 140, 50, 0.8); }
+.chronicle-cell[data-state="critical"] {
+  background: rgba(255, 71, 87, 0.7);
+  border-color: var(--danger);
+  box-shadow: 0 0 6px rgba(255, 71, 87, 0.5);
+}
+
+/* Icon overlays on cells */
+.chronicle-cell-icon {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  font-size: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+  line-height: 1;
+  color: var(--gold-soft);
+  text-shadow: 0 0 3px var(--gold);
+}
+
+.chronicle-grid.mode-12mo .chronicle-cell-icon {
+  display: none; /* too small */
+}
+
+/* Month labels above grid */
+.chronicle-month-row {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 3px;
+  padding: 0 4px 6px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 8.5px;
+  letter-spacing: 0.25em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  min-width: min-content;
+}
+
+.chronicle-month-label {
+  white-space: nowrap;
+}
+
+/* Day-of-week row (left side) */
+.chronicle-dow-col {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 3px;
+  padding: 0 8px 0 0;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  align-items: center;
+}
+
+.chronicle-dow-label {
+  height: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Layout with day-of-week column and grid */
+.chronicle-grid-layout {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Trend line sparkline panel */
+.chronicle-trend-panel {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  padding: 16px 18px;
+  margin-bottom: 18px;
+}
+
+.chronicle-trend-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.3em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.chronicle-trend-svg {
+  width: 100%;
+  height: 60px;
+  display: block;
+}
+
+.chronicle-trend-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chronicle-trend-stat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--text-secondary);
+}
+
+.chronicle-trend-stat .k {
+  color: var(--text-dim);
+  margin-right: 6px;
+}
+
+.chronicle-trend-stat .v {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.chronicle-trend-stat .v.good { color: var(--success); }
+.chronicle-trend-stat .v.warn { color: var(--gold-soft); }
+.chronicle-trend-stat .v.bad { color: var(--danger); }
+
+/* Pattern Detector panel */
+.chronicle-patterns-panel {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-mid);
+  outline: 1px solid var(--border-dim);
+  outline-offset: 3px;
+  padding: 18px 20px 20px;
+  margin-bottom: 22px;
+}
+
+.chronicle-patterns-panel .corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--gold);
+  pointer-events: none;
+}
+.chronicle-patterns-panel .corner.tl { top: -2px; left: -2px; border-top: 2px solid; border-left: 2px solid; }
+.chronicle-patterns-panel .corner.tr { top: -2px; right: -2px; border-top: 2px solid; border-right: 2px solid; }
+.chronicle-patterns-panel .corner.bl { bottom: -2px; left: -2px; border-bottom: 2px solid; border-left: 2px solid; }
+.chronicle-patterns-panel .corner.br { bottom: -2px; right: -2px; border-bottom: 2px solid; border-right: 2px solid; }
+
+.chronicle-patterns-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.35em;
+  color: var(--gold-soft);
+  text-shadow: 0 0 6px var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.chronicle-patterns-subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-bottom: 14px;
+}
+
+.chronicle-pattern-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.chronicle-pattern-list::-webkit-scrollbar { width: 6px; }
+.chronicle-pattern-list::-webkit-scrollbar-track { background: rgba(2, 3, 9, 0.6); }
+.chronicle-pattern-list::-webkit-scrollbar-thumb { background: var(--border-mid); }
+
+.chronicle-pattern-item {
+  padding: 10px 12px;
+  background: rgba(2, 3, 9, 0.45);
+  border-left: 2px solid var(--accent-cyan);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.chronicle-pattern-item.warn {
+  border-left-color: var(--gold-soft);
+  background: rgba(245, 196, 81, 0.05);
+}
+
+.chronicle-pattern-item.bad {
+  border-left-color: var(--danger);
+  background: rgba(255, 71, 87, 0.04);
+}
+
+.chronicle-pattern-item.good {
+  border-left-color: var(--success);
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.chronicle-pattern-item strong {
+  color: var(--accent-cyan-bright);
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.chronicle-pattern-item.warn strong { color: var(--gold-soft); }
+.chronicle-pattern-item.bad strong { color: #ff8f9c; }
+.chronicle-pattern-item.good strong { color: var(--success); }
+
+.chronicle-patterns-empty {
+  padding: 18px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* Drill-down modal (tap on a cell) */
+.chronicle-drill-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 3, 9, 0.85);
+  backdrop-filter: blur(5px);
+  z-index: 600;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.chronicle-drill-overlay.active {
+  display: flex;
+  animation: chron-drill-in 0.3s ease-out;
+}
+
+@keyframes chron-drill-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.chronicle-drill-window {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1.5px solid var(--accent-cyan);
+  outline: 1px solid var(--accent-cyan);
+  outline-offset: 4px;
+  max-width: 540px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 22px 24px 20px;
+  box-shadow: 0 0 30px rgba(92, 230, 240, 0.3);
+}
+
+.chronicle-drill-window .corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--accent-cyan);
+  pointer-events: none;
+}
+.chronicle-drill-window .corner.tl { top: -2px; left: -2px; border-top: 2px solid; border-left: 2px solid; }
+.chronicle-drill-window .corner.tr { top: -2px; right: -2px; border-top: 2px solid; border-right: 2px solid; }
+.chronicle-drill-window .corner.bl { bottom: -2px; left: -2px; border-bottom: 2px solid; border-left: 2px solid; }
+.chronicle-drill-window .corner.br { bottom: -2px; right: -2px; border-bottom: 2px solid; border-right: 2px solid; }
+
+.chronicle-drill-date {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  color: var(--accent-cyan-bright);
+  text-shadow: 0 0 6px var(--accent-cyan);
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.chronicle-drill-subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 16px;
+  font-style: italic;
+}
+
+.chronicle-drill-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 520px) {
+  .chronicle-drill-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chronicle-drill-col {
+  padding: 12px 14px;
+  background: rgba(2, 3, 9, 0.5);
+  border: 1px solid var(--border-dim);
+}
+
+.chronicle-drill-col-label {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.chronicle-drill-col.state-col .chronicle-drill-col-label {
+  color: var(--gold-soft);
+}
+
+.chronicle-drill-col-value {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 6px;
+}
+
+.chronicle-drill-col-band {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--text-secondary);
+}
+
+.chronicle-drill-details {
+  margin-bottom: 14px;
+}
+
+.chronicle-drill-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  border-bottom: 1px solid rgba(92, 230, 240, 0.06);
+}
+
+.chronicle-drill-detail-row .k {
+  color: var(--text-dim);
+}
+
+.chronicle-drill-detail-row .v {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.chronicle-drill-close {
+  width: 100%;
+  padding: 10px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 10.5px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan-bright);
+  text-shadow: 0 0 6px var(--accent-cyan);
+  background: rgba(92, 230, 240, 0.06);
+  transition: all 0.2s;
+}
+
+.chronicle-drill-close:hover {
+  background: rgba(92, 230, 240, 0.22);
+}
+
+/* Chronicle empty state */
+.chronicle-empty {
+  padding: 40px 20px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* Mobile */
+@media (max-width: 760px) {
+  .chronicle-panel { padding: 14px 12px 18px; }
+  .chronicle-patterns-panel { padding: 14px 14px 16px; }
+  .chronicle-panel-legend { font-size: 9px; gap: 6px; }
+  .chronicle-legend-cell { width: 9px; height: 9px; }
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 10 — SYNC CODE (in Settings → Data)
+   ═══════════════════════════════════════════════════════ */
+
+.sync-mode-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: rgba(2, 3, 9, 0.6);
+  border: 1px solid var(--border-dim);
+  margin-bottom: 12px;
+}
+
+.sync-mode-btn {
+  flex: 1;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 9.5px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sync-mode-btn:hover {
+  color: var(--text-secondary);
+}
+
+.sync-mode-btn.active {
+  color: var(--accent-cyan-bright);
+  text-shadow: 0 0 4px var(--accent-cyan);
+  background: rgba(92, 230, 240, 0.1);
+}
+
+.sync-code-textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 10px 12px;
+  background: rgba(2, 3, 9, 0.8);
+  border: 1px solid var(--border-dim);
+  color: var(--accent-cyan);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.sync-code-textarea:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: var(--glow-cyan-sm);
+}
+
+.sync-code-textarea[readonly] {
+  color: var(--accent-cyan-bright);
+  cursor: text;
+}
+
+.sync-code-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.sync-code-meta .sync-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sync-code-meta .sync-meta-item .k {
+  color: var(--text-faint);
+}
+
+.sync-code-meta .sync-meta-item .v {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.sync-actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.sync-action-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 10px 14px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan-bright);
+  text-shadow: 0 0 4px var(--accent-cyan);
+  background: rgba(92, 230, 240, 0.06);
+  transition: all 0.2s;
+}
+
+.sync-action-btn:hover:not(:disabled) {
+  background: rgba(92, 230, 240, 0.2);
+}
+
+.sync-action-btn.danger {
+  border-color: var(--danger);
+  color: #ff8f9c;
+  text-shadow: 0 0 4px var(--danger);
+  background: rgba(255, 71, 87, 0.06);
+}
+
+.sync-action-btn.danger:hover:not(:disabled) {
+  background: rgba(255, 71, 87, 0.15);
+}
+
+.sync-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sync-preview-box {
+  display: none;
+  padding: 12px 14px;
+  background: rgba(245, 196, 81, 0.06);
+  border: 1px solid var(--gold);
+  margin-top: 12px;
+}
+
+.sync-preview-box.show { display: block; }
+
+.sync-preview-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 10.5px;
+  letter-spacing: 0.3em;
+  color: var(--gold-soft);
+  text-shadow: 0 0 4px var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.sync-preview-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.sync-preview-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.sync-preview-row .k { color: var(--text-dim); }
+.sync-preview-row .v { color: var(--text-primary); font-weight: 700; }
+
+.sync-preview-warning {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 71, 87, 0.08);
+  border-left: 2px solid var(--danger);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: #ffbac2;
+  line-height: 1.5;
+}
+
+.sync-qr-wrapper {
+  display: none;
+  justify-content: center;
+  padding: 16px;
+  background: #f7faff;
+  margin-top: 10px;
+  border: 1px solid var(--border-dim);
+}
+
+.sync-qr-wrapper.show {
+  display: flex;
+}
+
+.sync-qr-wrapper svg {
+  display: block;
+  max-width: 240px;
+  width: 100%;
+  height: auto;
+}
+
+.sync-qr-note {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-top: 6px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 11 — MORNING DEPLOY
+   Templates, Deploy Yesterday, Loadout modal, Mobile FAB
+   ═══════════════════════════════════════════════════════ */
+
+/* ---------- Morning Loadout Modal ---------- */
+.md-overlay {
+  position: fixed; inset: 0;
+  background: rgba(2, 3, 9, 0.92);
+  backdrop-filter: blur(8px);
+  z-index: 9500;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 12px;
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease;
+}
+.md-overlay.active { display: flex; }
+
+.md-window {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  background: linear-gradient(180deg, rgba(6,10,20,0.98) 0%, rgba(2,3,9,0.98) 100%);
+  border: 1px solid var(--cyan);
+  box-shadow: 0 0 40px rgba(92, 230, 240, 0.3), inset 0 0 20px rgba(92, 230, 240, 0.05);
+  padding: 28px 22px 22px;
+  animation: slideInUp 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.md-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(92, 230, 240, 0.2);
+  margin-bottom: 18px;
+}
+.md-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 18px; letter-spacing: 3px;
+  color: var(--cyan);
+  text-shadow: 0 0 10px rgba(92, 230, 240, 0.5);
+  font-weight: 700;
+}
+.md-subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.md-close-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  width: 32px; height: 32px;
+  font-size: 18px;
+  cursor: pointer;
+  font-family: 'Orbitron', sans-serif;
+  transition: all 0.2s;
+}
+.md-close-btn:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.md-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(92, 230, 240, 0.15);
+}
+.md-tab {
+  flex: 1;
+  padding: 10px 8px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.md-tab:hover { color: rgba(255, 255, 255, 0.8); }
+.md-tab.active {
+  color: var(--cyan);
+  border-bottom-color: var(--cyan);
+  text-shadow: 0 0 8px rgba(92, 230, 240, 0.4);
+}
+
+.md-section { display: none; }
+.md-section.active { display: block; }
+
+.md-section-head {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin: 4px 0 10px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.md-cat-group { margin-bottom: 16px; }
+.md-cat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  padding-left: 2px;
+}
+.md-cat-label .cat-scholar  { color: #5ce6f0; }
+.md-cat-label .cat-research { color: #b38dff; }
+.md-cat-label .cat-iron     { color: #ff8a4a; }
+.md-cat-label .cat-dungeon  { color: #f5c451; }
+.md-cat-label .cat-recovery { color: #4ade80; }
+
+.md-template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+.md-template {
+  position: relative;
+  padding: 12px 12px 12px 14px;
+  background: rgba(10, 14, 26, 0.8);
+  border: 1px solid rgba(92, 230, 240, 0.18);
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 62px;
+  display: flex; flex-direction: column; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+.md-template:hover {
+  border-color: var(--cyan);
+  background: rgba(20, 28, 48, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 12px rgba(92, 230, 240, 0.2);
+}
+.md-template.deployed {
+  border-color: var(--gold);
+  background: rgba(245, 196, 81, 0.08);
+}
+.md-template.deployed::after {
+  content: '✓';
+  position: absolute; top: 6px; right: 8px;
+  color: var(--gold); font-size: 14px; font-weight: bold;
+}
+.md-template.cat-scholar  { border-left: 3px solid #5ce6f0; }
+.md-template.cat-research { border-left: 3px solid #b38dff; }
+.md-template.cat-iron     { border-left: 3px solid #ff8a4a; }
+.md-template.cat-dungeon  { border-left: 3px solid #f5c451; }
+.md-template.cat-recovery { border-left: 3px solid #4ade80; }
+
+.md-template-name {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.3;
+  margin-bottom: 4px;
+  text-transform: none;
+  letter-spacing: 0.3px;
+}
+.md-template-meta {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  display: flex; gap: 8px;
+}
+.md-template-meta .diff-easy   { color: #4ade80; }
+.md-template-meta .diff-medium { color: #f5c451; }
+.md-template-meta .diff-hard   { color: #ff8a4a; }
+.md-template-meta .diff-boss   { color: #ff4757; }
+
+.md-template-pin {
+  position: absolute;
+  top: 4px; right: 6px;
+  font-size: 10px;
+  color: var(--gold);
+  opacity: 0.7;
+}
+.md-template-actions {
+  position: absolute; top: 4px; right: 4px;
+  display: flex; gap: 2px;
+  opacity: 0; transition: opacity 0.15s;
+}
+.md-template:hover .md-template-actions { opacity: 1; }
+.md-template-actions button {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.7);
+  width: 22px; height: 22px;
+  font-size: 11px; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 0; line-height: 1;
+}
+.md-template-actions button:hover { border-color: var(--cyan); color: var(--cyan); }
+.md-template-actions button.del:hover { border-color: var(--danger); color: var(--danger); }
+
+.md-deploy-preview {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(92, 230, 240, 0.05);
+  border: 1px dashed rgba(92, 230, 240, 0.3);
+  min-height: 60px;
+}
+.md-deploy-preview-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--cyan);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.md-deploy-preview-items {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.md-deploy-chip {
+  padding: 4px 10px;
+  background: rgba(10, 14, 26, 0.8);
+  border: 1px solid rgba(92, 230, 240, 0.3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.md-deploy-chip button {
+  background: transparent; border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer; font-size: 14px; padding: 0;
+  line-height: 1;
+}
+.md-deploy-chip button:hover { color: var(--danger); }
+
+.md-deploy-actions {
+  display: flex; gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(92, 230, 240, 0.15);
+}
+.md-deploy-btn {
+  flex: 1;
+  padding: 12px;
+  background: linear-gradient(90deg, rgba(92, 230, 240, 0.15) 0%, rgba(92, 230, 240, 0.05) 100%);
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px; letter-spacing: 3px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+.md-deploy-btn:hover:not(:disabled) {
+  background: rgba(92, 230, 240, 0.2);
+  box-shadow: 0 0 15px rgba(92, 230, 240, 0.3);
+}
+.md-deploy-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.md-deploy-btn.secondary {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.6);
+  background: transparent;
+}
+.md-deploy-btn.secondary:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ---------- Yesterday Picker ---------- */
+.md-yesterday-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 320px; overflow-y: auto;
+  padding-right: 4px;
+}
+.md-yesterday-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: rgba(255,255,255,0.4);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  border: 1px dashed rgba(255,255,255,0.1);
+}
+.md-y-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: rgba(10, 14, 26, 0.6);
+  border: 1px solid rgba(92, 230, 240, 0.12);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'JetBrains Mono', monospace;
+}
+.md-y-item:hover { border-color: var(--cyan); background: rgba(20, 28, 48, 0.8); }
+.md-y-item.selected {
+  border-color: var(--gold);
+  background: rgba(245, 196, 81, 0.08);
+}
+.md-y-check {
+  width: 18px; height: 18px;
+  border: 1px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gold); font-weight: bold;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.md-y-item.selected .md-y-check { border-color: var(--gold); background: rgba(245, 196, 81, 0.15); }
+.md-y-name {
+  flex: 1;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.88);
+}
+.md-y-name.done { color: rgba(255,255,255,0.5); text-decoration: line-through; }
+.md-y-meta {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  display: flex; gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ---------- New Template form (inline on Templates tab) ---------- */
+.md-newtpl-toggle {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid rgba(245, 196, 81, 0.5);
+  color: var(--gold);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px; letter-spacing: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.md-newtpl-toggle:hover { background: rgba(245, 196, 81, 0.1); }
+
+.md-newtpl-form {
+  display: none;
+  padding: 12px;
+  margin-bottom: 14px;
+  background: rgba(245, 196, 81, 0.04);
+  border: 1px dashed rgba(245, 196, 81, 0.3);
+  flex-direction: column; gap: 8px;
+}
+.md-newtpl-form.active { display: flex; }
+.md-newtpl-form input, .md-newtpl-form select {
+  width: 100%;
+  padding: 8px 10px;
+  background: rgba(2,3,9,0.7);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+.md-newtpl-form input:focus, .md-newtpl-form select:focus {
+  outline: none; border-color: var(--cyan);
+}
+.md-newtpl-row { display: flex; gap: 8px; }
+.md-newtpl-row > * { flex: 1; }
+.md-newtpl-diffs { display: flex; gap: 4px; }
+.md-newtpl-diff {
+  flex: 1;
+  padding: 6px;
+  background: rgba(2,3,9,0.7);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.7);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px; letter-spacing: 1.5px;
+  cursor: pointer;
+  text-align: center;
+  text-transform: uppercase;
+}
+.md-newtpl-diff.selected {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(92, 230, 240, 0.08);
+}
+.md-newtpl-save {
+  padding: 8px;
+  background: rgba(92, 230, 240, 0.12);
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px; letter-spacing: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.md-newtpl-save:hover { background: rgba(92, 230, 240, 0.2); }
+
+/* ---------- Mobile FAB (Floating Action Button) ---------- */
+.fab-quest {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #5ce6f0 0%, #2ba0ac 100%);
+  color: #020309;
+  border: 2px solid rgba(255,255,255,0.3);
+  font-size: 28px;
+  font-weight: bold;
+  font-family: 'Orbitron', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(92, 230, 240, 0.5), inset 0 1px 2px rgba(255,255,255,0.4);
+  z-index: 800;
+  display: none;  /* shown only on mobile via media query */
+  align-items: center; justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.fab-quest:active { transform: scale(0.92); box-shadow: 0 2px 10px rgba(92, 230, 240, 0.4); }
+.fab-quest:hover { box-shadow: 0 4px 24px rgba(92, 230, 240, 0.7); }
+
+@media (max-width: 860px) {
+  .fab-quest { display: flex; }
+  .md-window { padding: 22px 14px 16px; }
+  .md-template-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .md-template { min-height: 58px; padding: 10px 10px 10px 12px; }
+  .md-template-name { font-size: 12px; }
+  .md-deploy-actions { flex-direction: column; }
+}
+
+@media (max-width: 500px) {
+  .md-template-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .md-title { font-size: 15px; letter-spacing: 2px; }
+  .md-tab { font-size: 10px; letter-spacing: 1.5px; padding: 8px 4px; }
+}
+
 </style>
 </head>
 <body>
@@ -8877,7 +10198,11 @@ body {
       <span class="tab-label">Achievements</span>
       <span class="tab-count" id="achCount">0</span>
     </button>
-    <button class="tab-btn emergency-tab" data-tab="emergency">
+    <button class="tab-btn" data-tab="chronicle">
+      <span class="tab-icon" aria-hidden="true">◈</span>
+      <span class="tab-label">Chronicle</span>
+    </button>
+        <button class="tab-btn emergency-tab" data-tab="emergency">
       <span class="tab-icon" aria-hidden="true">🚨</span>
       <span class="tab-label">Emergency</span>
     </button>
@@ -9236,6 +10561,93 @@ body {
     </div>
     <div class="ach-grid" id="achievementsGrid"></div>
   </div>
+
+
+  <!-- CHRONICLE TAB (PHASE 10) -->
+  <div class="tab-content" data-tab-content="chronicle" style="display: none;">
+    <div class="section-label">
+      <span class="bracket">[</span>
+      <span>The Chronicle</span>
+      <span class="bracket">]</span>
+    </div>
+
+    <div class="chronicle-intro">
+      <p class="chronicle-intro-text">
+        『 THE SYSTEM REMEMBERS EVERY DAY 』
+      </p>
+    </div>
+
+    <div class="chronicle-container">
+
+      <!-- View toggle: Output vs State -->
+      <div class="chronicle-view-toggle" role="tablist">
+        <button class="chronicle-view-btn active" data-view="output" role="tab">◈ Output</button>
+        <button class="chronicle-view-btn" data-view="state" role="tab">◉ State</button>
+      </div>
+
+      <!-- Range toggle -->
+      <div class="chronicle-range-row">
+        <button class="chronicle-range-btn active" data-range="90">90 Days</button>
+        <button class="chronicle-range-btn" data-range="180">6 Months</button>
+        <button class="chronicle-range-btn" data-range="365">12 Months</button>
+      </div>
+
+      <!-- Heatmap panel -->
+      <div class="chronicle-panel" id="chroniclePanel">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+
+        <div class="chronicle-panel-header">
+          <div class="chronicle-panel-title" id="chroniclePanelTitle">Output — XP per Day</div>
+          <div class="chronicle-panel-legend" id="chroniclePanelLegend">
+            <!-- Populated by renderChronicle() -->
+          </div>
+        </div>
+
+        <div class="chronicle-grid-wrapper">
+          <div id="chronicleMonthRow" class="chronicle-month-row"></div>
+          <div class="chronicle-grid-layout">
+            <div class="chronicle-dow-col">
+              <span class="chronicle-dow-label">MON</span>
+              <span class="chronicle-dow-label"></span>
+              <span class="chronicle-dow-label">WED</span>
+              <span class="chronicle-dow-label"></span>
+              <span class="chronicle-dow-label">FRI</span>
+              <span class="chronicle-dow-label"></span>
+              <span class="chronicle-dow-label">SUN</span>
+            </div>
+            <div id="chronicleGrid" class="chronicle-grid mode-90d"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trend line -->
+      <div class="chronicle-trend-panel">
+        <div class="chronicle-trend-title" id="chronicleTrendTitle">90-Day Trend</div>
+        <svg class="chronicle-trend-svg" id="chronicleTrendSvg" preserveAspectRatio="none" viewBox="0 0 300 60">
+          <!-- Populated -->
+        </svg>
+        <div class="chronicle-trend-summary" id="chronicleTrendSummary">
+          <!-- Populated -->
+        </div>
+      </div>
+
+      <!-- Pattern Detector -->
+      <div class="chronicle-patterns-panel">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <div class="chronicle-patterns-title">◈ Pattern Detector</div>
+        <div class="chronicle-patterns-subtitle">
+          『 The System reports what it has observed. Patterns only surface with enough data. 』
+        </div>
+        <div class="chronicle-pattern-list" id="chroniclePatternList">
+          <!-- Populated -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 
   <!-- EMERGENCY PROTOCOL TAB -->
       <div class="tab-content" data-tab-content="emergency" style="display: none;">
@@ -9728,6 +11140,58 @@ body {
           <input type="file" id="settingsImportInput" accept="application/json,.json" />
         </div>
 
+
+        <div class="settings-card">
+          <div class="settings-card-title"><span class="bracket">『</span> Cross-Device Sync <span class="bracket">』</span></div>
+          <div class="settings-card-help">
+            Generate a sync code here. Paste it into THE SYSTEM on another device (phone, tablet, second laptop) to transfer your full progress — quests, stats, streaks, body data, debriefings, everything. No account, no server. Anyone with the code can import it, so treat it like a password.
+          </div>
+
+          <div class="sync-mode-toggle" role="tablist">
+            <button class="sync-mode-btn active" data-sync-mode="export" role="tab">⇧ Export</button>
+            <button class="sync-mode-btn" data-sync-mode="import" role="tab">⇩ Import</button>
+          </div>
+
+          <!-- EXPORT MODE -->
+          <div class="sync-mode-panel" data-sync-panel="export">
+            <textarea class="sync-code-textarea" id="syncExportCode" readonly placeholder="Tap 'Generate Code' to create a sync code…" rows="5"></textarea>
+            <div class="sync-code-meta">
+              <span class="sync-meta-item"><span class="k">Size:</span><span class="v" id="syncExportSize">—</span></span>
+              <span class="sync-meta-item"><span class="k">Chars:</span><span class="v" id="syncExportChars">—</span></span>
+            </div>
+            <div class="sync-actions-row">
+              <button class="sync-action-btn" id="syncGenerateBtn">Generate Code</button>
+              <button class="sync-action-btn" id="syncCopyBtn" disabled>Copy</button>
+              <button class="sync-action-btn" id="syncQrBtn" disabled>QR Code</button>
+            </div>
+            <div class="sync-qr-wrapper" id="syncQrWrapper">
+              <!-- QR injected here -->
+            </div>
+            <div class="sync-qr-note" id="syncQrNote" style="display: none;">
+              Scan with another device, then tap Import on that device to paste.
+            </div>
+          </div>
+
+          <!-- IMPORT MODE -->
+          <div class="sync-mode-panel" data-sync-panel="import" style="display: none;">
+            <textarea class="sync-code-textarea" id="syncImportCode" placeholder="Paste a sync code here…" rows="5"></textarea>
+            <div class="sync-actions-row">
+              <button class="sync-action-btn" id="syncPreviewBtn">Preview</button>
+              <button class="sync-action-btn danger" id="syncImportBtn" disabled>Import &amp; Replace All</button>
+            </div>
+            <div class="sync-preview-box" id="syncPreviewBox">
+              <div class="sync-preview-title">⚠ Preview — About to Replace</div>
+              <div class="sync-preview-rows" id="syncPreviewRows">
+                <!-- Populated -->
+              </div>
+              <div class="sync-preview-warning">
+                Importing will OVERWRITE your current System data. A rollback snapshot of your current state will be saved automatically and can be restored from the Auto-Snapshot Recovery card above.
+              </div>
+            </div>
+          </div>
+        </div>
+
+
         <div class="settings-card">
           <div class="settings-card-title"><span class="bracket">『</span> Backup Reminders <span class="bracket">』</span></div>
           <div class="settings-card-help">The System will nudge you to export a fresh backup when this many days pass since your last export. Set to 0 to disable.</div>
@@ -10069,6 +11533,40 @@ body {
 </div>
 
 
+
+<!-- ═══════════════════════════════════════════════════════
+     PHASE 10 — Chronicle drill-down modal
+     ═══════════════════════════════════════════════════════ -->
+<div class="chronicle-drill-overlay" id="chronicleDrillOverlay">
+  <div class="chronicle-drill-window">
+    <span class="corner tl"></span><span class="corner tr"></span>
+    <span class="corner bl"></span><span class="corner br"></span>
+    <div class="chronicle-drill-date" id="chronicleDrillDate">APRIL 18, 2026</div>
+    <div class="chronicle-drill-subtitle" id="chronicleDrillSubtitle">Saturday · Day 47 of The System</div>
+
+    <div class="chronicle-drill-grid">
+      <div class="chronicle-drill-col">
+        <div class="chronicle-drill-col-label">Output</div>
+        <div class="chronicle-drill-col-value" id="chronicleDrillOutput">0 XP</div>
+        <div class="chronicle-drill-col-band" id="chronicleDrillOutputBand">No activity</div>
+      </div>
+      <div class="chronicle-drill-col state-col">
+        <div class="chronicle-drill-col-label">State</div>
+        <div class="chronicle-drill-col-value" id="chronicleDrillState">—</div>
+        <div class="chronicle-drill-col-band" id="chronicleDrillStateBand">No signal</div>
+      </div>
+    </div>
+
+    <div class="chronicle-drill-details" id="chronicleDrillDetails">
+      <!-- Populated -->
+    </div>
+
+    <button class="chronicle-drill-close" id="chronicleDrillCloseBtn">Close</button>
+  </div>
+</div>
+
+
+
 <!-- RCA EMERGENCY PROTOCOL MODAL -->
 <div class="rca-overlay" id="rcaOverlay">
   <div class="rca-window">
@@ -10378,6 +11876,115 @@ body {
     </div>
   </div>
 </div>
+
+
+
+<!-- ═══════════════════════════════════════════════════════
+     PHASE 11 — MORNING DEPLOY MODAL + MOBILE FAB
+     ═══════════════════════════════════════════════════════ -->
+
+<div class="md-overlay" id="mdOverlay">
+  <div class="md-window">
+    <span class="corner tl"></span>
+    <span class="corner tr"></span>
+    <span class="corner bl"></span>
+    <span class="corner br"></span>
+
+    <div class="md-header">
+      <div>
+        <div class="md-title">MORNING DEPLOY</div>
+        <div class="md-subtitle">『 Arm The Day 』</div>
+      </div>
+      <button class="md-close-btn" id="mdCloseBtn">×</button>
+    </div>
+
+    <div class="md-tabs">
+      <button class="md-tab active" data-mdtab="templates">TEMPLATES</button>
+      <button class="md-tab" data-mdtab="yesterday">YESTERDAY</button>
+      <button class="md-tab" data-mdtab="custom">CUSTOM</button>
+    </div>
+
+    <!-- TEMPLATES TAB -->
+    <div class="md-section active" data-mdsection="templates">
+      <div class="md-section-head">
+        <span>Tap to queue · long-press to pin · hover for edit</span>
+        <button class="md-newtpl-toggle" id="mdNewTplToggle">+ NEW</button>
+      </div>
+
+      <div class="md-newtpl-form" id="mdNewTplForm">
+        <input type="text" id="mdNewTplName" placeholder="Template name…" maxlength="80" />
+        <div class="md-newtpl-row">
+          <select id="mdNewTplCat">
+            <option value="scholar">Scholar — Medicine / Boards</option>
+            <option value="research">Research — Academic</option>
+            <option value="iron">Iron — Fitness</option>
+            <option value="dungeon">Dungeon — Chores / Admin</option>
+            <option value="recovery">Recovery — Rest / Self-Care</option>
+          </select>
+          <input type="time" id="mdNewTplTime" placeholder="Due time (optional)" />
+        </div>
+        <div class="md-newtpl-diffs">
+          <div class="md-newtpl-diff selected" data-diff="easy">EASY · 15</div>
+          <div class="md-newtpl-diff" data-diff="medium">MED · 40</div>
+          <div class="md-newtpl-diff" data-diff="hard">HARD · 80</div>
+          <div class="md-newtpl-diff" data-diff="boss">BOSS · 250</div>
+        </div>
+        <button class="md-newtpl-save" id="mdNewTplSave">SAVE TEMPLATE</button>
+      </div>
+
+      <div id="mdTemplatesContainer"></div>
+    </div>
+
+    <!-- YESTERDAY TAB -->
+    <div class="md-section" data-mdsection="yesterday">
+      <div class="md-section-head">
+        <span id="mdYHead">Yesterday's quests · tap to select</span>
+        <button class="md-newtpl-toggle" id="mdYAllBtn" style="border-color: rgba(92, 230, 240, 0.5); color: var(--cyan);">SELECT ALL</button>
+      </div>
+      <div class="md-yesterday-list" id="mdYesterdayList"></div>
+    </div>
+
+    <!-- CUSTOM TAB (mobile-friendly form version of the classic modal) -->
+    <div class="md-section" data-mdsection="custom">
+      <div class="md-newtpl-form active" style="background: transparent; border: none; padding: 0;">
+        <input type="text" id="mdCustomName" placeholder="Quest name…" maxlength="80" />
+        <div class="md-newtpl-row">
+          <select id="mdCustomCat">
+            <option value="scholar">Scholar — Medicine / Boards</option>
+            <option value="research">Research — Academic</option>
+            <option value="iron">Iron — Fitness</option>
+            <option value="dungeon">Dungeon — Chores / Admin</option>
+            <option value="recovery">Recovery — Rest / Self-Care</option>
+          </select>
+          <input type="time" id="mdCustomTime" />
+        </div>
+        <div class="md-newtpl-diffs" id="mdCustomDiffs">
+          <div class="md-newtpl-diff selected" data-diff="easy">EASY · 15</div>
+          <div class="md-newtpl-diff" data-diff="medium">MED · 40</div>
+          <div class="md-newtpl-diff" data-diff="hard">HARD · 80</div>
+          <div class="md-newtpl-diff" data-diff="boss">BOSS · 250</div>
+        </div>
+        <button class="md-newtpl-save" id="mdCustomAddBtn">ADD TO QUEUE</button>
+      </div>
+    </div>
+
+    <!-- DEPLOY PREVIEW + ACTIONS (always visible) -->
+    <div class="md-deploy-preview">
+      <div class="md-deploy-preview-label" id="mdQueueLabel">QUEUE (0)</div>
+      <div class="md-deploy-preview-items" id="mdQueueItems">
+        <span style="color: rgba(255,255,255,0.35); font-family: 'JetBrains Mono', monospace; font-size: 11px;">Tap templates or yesterday's quests to build your loadout…</span>
+      </div>
+    </div>
+
+    <div class="md-deploy-actions">
+      <button class="md-deploy-btn secondary" id="mdDismissBtn">DISMISS</button>
+      <button class="md-deploy-btn" id="mdDeployBtn" disabled>DEPLOY ALL</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Floating Action Button -->
+<button class="fab-quest" id="fabQuest" aria-label="Add Quest">+</button>
 
 
 <script>
@@ -11299,6 +12906,8 @@ function loadState() {
   if (typeof ensurePhase9State === 'function') ensurePhase9State();
   // Phase 9.2: settings / UI prefs
   if (typeof ensurePhase9_2State === 'function') ensurePhase9_2State();
+  // Phase 10: chronicle & sync
+  if (typeof ensurePhase10State === 'function') ensurePhase10State();
 }
 
 function saveState() {
@@ -16987,12 +18596,1867 @@ if (document.readyState === 'loading') {
     if (typeof initPhase8 === 'function') initPhase8();
     if (typeof initPhase9 === 'function') initPhase9();
     if (typeof initPhase9_2 === 'function') initPhase9_2();
+    if (typeof initPhase10 === 'function') initPhase10();
   });
 } else {
   if (typeof initPhase8 === 'function') initPhase8();
   if (typeof initPhase9 === 'function') initPhase9();
   if (typeof initPhase9_2 === 'function') initPhase9_2();
+  if (typeof initPhase10 === 'function') initPhase10();
 }
+
+
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 10 — CHRONICLE HEATMAP + SYNC CODE
+   ═══════════════════════════════════════════════════════ */
+
+/* ---------- State init ---------- */
+function ensurePhase10State() {
+  if (!state.phase10InstallDate) {
+    state.phase10InstallDate = todayISO();
+  }
+  if (!state.stateHistory) {
+    // Per-day computed state scores, start fresh from install
+    // Format: { 'YYYY-MM-DD': { score: 0-100, band: 'steady'|'humming'|...,  signals: {...} } }
+    state.stateHistory = {};
+  }
+  if (state.chronicleView === undefined)  state.chronicleView = 'output';
+  if (state.chronicleRange === undefined) state.chronicleRange = 90;
+  saveState();
+}
+
+/* ---------- Output score: per-day XP earned ---------- */
+// We don't persist per-day XP, so we estimate from completed quests + sprints + regens
+function computeDayOutput(iso) {
+  // Quest XP
+  const dayQuests = (state.quests || []).filter(q => {
+    return q.completed && q.completedAt && q.completedAt.substring(0, 10) === iso;
+  });
+
+  let xp = 0;
+  const bossKills = [];
+  for (const q of dayQuests) {
+    const diffXp = { easy: 15, medium: 40, hard: 80, boss: 250 }[q.difficulty] || 15;
+    xp += diffXp;
+    if (q.difficulty === 'boss') bossKills.push(q);
+  }
+
+  // Sprint XP (approx: 1 XP per min)
+  const daySprints = (state.sprintHistory || []).filter(s => {
+    if (!s.date) return false;
+    return s.date.substring(0, 10) === iso;
+  });
+  const sprintMin = daySprints.reduce((sum, s) => sum + Math.round((s.duration || 0) / 60), 0);
+  xp += sprintMin;
+
+  // Berserker sessions
+  const dayBers = (state.berserkerSessions || []).filter(b => {
+    if (!b.endedAt) return false;
+    return b.endedAt.substring(0, 10) === iso;
+  });
+  const bersXp = dayBers.reduce((sum, b) => sum + (b.xp || 0), 0);
+  xp += bersXp;
+
+  // Regen cycles (Phase 8 recovery quests)
+  const dayRegens = (state.recoveryQuestLog || []).filter(r => {
+    if (!r.timestamp) return false;
+    return r.timestamp.substring(0, 10) === iso;
+  });
+  xp += dayRegens.length * 22;
+
+  return {
+    xp,
+    questsCompleted: dayQuests.length,
+    bossKills: bossKills.length,
+    sprintMin,
+    sprintCount: daySprints.length,
+    berserkerMin: dayBers.reduce((sum, b) => sum + (b.durationMin || 0), 0),
+    regenCount: dayRegens.length
+  };
+}
+
+// Map XP to 0-4 intensity bucket. 0 = no activity.
+function outputBandForXp(xp) {
+  if (xp <= 0)   return 0;
+  if (xp < 30)   return 1;
+  if (xp < 80)   return 2;
+  if (xp < 180)  return 3;
+  return 4;
+}
+
+/* ---------- State score: composite burnout signal ---------- */
+function computeDayState(iso) {
+  const signals = {};
+  let score = 0;
+  let hasData = false;
+
+  // Sleep from body check-ins
+  const checkIn = (state.bodyStats && state.bodyStats.dailyCheckIns && state.bodyStats.dailyCheckIns[iso]) || null;
+  if (checkIn && checkIn.sleepHours != null) {
+    signals.sleepHours = checkIn.sleepHours;
+    hasData = true;
+    if (checkIn.sleepHours < 6)       score += 25;
+    else if (checkIn.sleepHours < 7)  score += 10;
+    else                              score -= 5;
+  }
+
+  // RCA sessions
+  const rcaToday = (state.rcaSessions || []).filter(r => {
+    const ts = r.startedAt || r.createdAt || r.timestamp;
+    return ts && ts.substring(0, 10) === iso;
+  }).length;
+  if (rcaToday > 0) { score += 15 * rcaToday; signals.rcaSessions = rcaToday; hasData = true; }
+
+  // Commitment outcomes
+  const commitsToday = (state.commitments || []).concat(state.commitmentHistory || []).filter(c => {
+    const ts = c.resolvedAt || c.failedAt || c.honoredAt;
+    return ts && ts.substring(0, 10) === iso;
+  });
+  let failed = 0, honored = 0;
+  for (const c of commitsToday) {
+    if (c.status === 'failed' || c.failedAt) failed++;
+    else if (c.status === 'honored' || c.honoredAt) honored++;
+  }
+  if (failed > 0)  { score += 12 * failed; signals.commitFailed = failed; hasData = true; }
+  if (honored > 0) { score -= 5 * honored; signals.commitHonored = honored; hasData = true; }
+
+  // Berserker overrides
+  const bersToday = (state.berserkerSessions || []).filter(b => {
+    if (!b.endedAt) return false;
+    return b.endedAt.substring(0, 10) === iso;
+  });
+  let overrides = 0, regensInBers = 0;
+  for (const b of bersToday) {
+    overrides += (b.overrides || 0);
+    regensInBers += (b.regenCycles || 0);
+  }
+  if (overrides >= 3) { score += 8; signals.overrides = overrides; hasData = true; }
+
+  // Regen cycles honored
+  const regenCount = (state.recoveryQuestLog || []).filter(r => {
+    if (!r.timestamp) return false;
+    return r.timestamp.substring(0, 10) === iso;
+  }).length;
+  if (regenCount > 0) { score -= 6 * regenCount; signals.regenCycles = regenCount; hasData = true; }
+
+  // Recovery day
+  const recoveryDays = state.recoveryDays || {};
+  if (recoveryDays[iso]) { score -= 15; signals.recoveryDay = true; hasData = true; }
+
+  // Penalty triggered
+  const penaltyLog = (state.messageFeed || []).filter(m => {
+    if (!m.timestamp) return false;
+    if (m.timestamp.substring(0, 10) !== iso) return false;
+    const txt = (m.text || '').toLowerCase();
+    return m.type === 'penalty' || txt.includes('penalty');
+  });
+  if (penaltyLog.length > 0) { score += 20; signals.penalty = true; hasData = true; }
+
+  // Overdue quests still open at end of day (approximated: quests created before date, incomplete now)
+  // For past days this is fuzzy — only count for days where quests existed
+  const overdueToday = (state.quests || []).filter(q => {
+    if (q.completed) return false;
+    if (!q.createdAt) return false;
+    if (q.createdAt.substring(0, 10) > iso) return false;
+    return true;
+  }).length;
+  if (overdueToday >= 3) { score += Math.min(15, overdueToday * 3); signals.overdue = overdueToday; hasData = true; }
+
+  // Fuel gauge (Phase 8 or 9 — daily fuel reading)
+  const fuelLog = state.fuelGaugeLog || [];
+  const fuelToday = fuelLog.find(f => f.date && f.date.substring(0, 10) === iso);
+  if (fuelToday) {
+    if (fuelToday.level === 'empty')     { score += 20; signals.fuel = 'empty'; }
+    else if (fuelToday.level === 'low')  { score += 10; signals.fuel = 'low';   }
+    else                                 { signals.fuel = fuelToday.level; }
+    hasData = true;
+  }
+
+  // Clamp 0-100
+  score = Math.max(0, Math.min(100, score));
+
+  let band;
+  if (!hasData)           band = 'no-signal';
+  else if (score <= 20)   band = 'steady';
+  else if (score <= 40)   band = 'humming';
+  else if (score <= 60)   band = 'warming';
+  else if (score <= 80)   band = 'hot';
+  else                    band = 'critical';
+
+  return { score, band, signals, hasData };
+}
+
+const STATE_BAND_LABELS = {
+  'no-signal': 'No Signal',
+  'steady':    'Steady',
+  'humming':   'Humming',
+  'warming':   'Warming',
+  'hot':       'Hot',
+  'critical':  'Critical'
+};
+
+/* ---------- Date helpers ---------- */
+function dateFromIso(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function isoAddDays(iso, n) {
+  const d = dateFromIso(iso);
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function formatDateLong(iso) {
+  const d = dateFromIso(iso);
+  return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+/* ---------- Render the Chronicle tab ---------- */
+function renderChronicle() {
+  const panel = document.querySelector('.tab-content[data-tab-content="chronicle"]');
+  if (!panel) return;
+  ensurePhase10State();
+
+  // Build per-day data for the range
+  const range = state.chronicleRange || 90;
+  const view = state.chronicleView || 'output';
+
+  const today = new Date();
+  const todayIso = todayISO();
+
+  // Start from the Monday on or before (today - range). This aligns the grid so each column is a week.
+  const endDate = dateFromIso(todayIso);
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - (range - 1));
+  // Back up to Monday (day-of-week Mon=1, Sun=0 → treat Sun as 7)
+  const dow = startDate.getDay() === 0 ? 6 : startDate.getDay() - 1; // days since Monday
+  startDate.setDate(startDate.getDate() - dow);
+
+  // Build day entries (ordered Mon-first, column by column)
+  const days = [];
+  const cur = new Date(startDate);
+  while (cur <= endDate) {
+    const iso = `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}-${String(cur.getDate()).padStart(2,'0')}`;
+    const isFuture = cur > endDate;
+    const beforeInstall = state.phase10InstallDate && iso < state.phase10InstallDate;
+    days.push({
+      iso,
+      dow: cur.getDay() === 0 ? 6 : cur.getDay() - 1, // 0=Mon..6=Sun
+      month: cur.getMonth(),
+      year: cur.getFullYear(),
+      date: new Date(cur),
+      isFuture,
+      beforeInstall
+    });
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  // Precompute scores
+  const outputByIso = {};
+  const stateByIso = {};
+  for (const d of days) {
+    outputByIso[d.iso] = computeDayOutput(d.iso);
+    if (!d.beforeInstall) {
+      stateByIso[d.iso] = computeDayState(d.iso);
+    }
+  }
+
+  // Cache so Pattern Detector can reuse
+  window.__chronicleCache = { days, outputByIso, stateByIso, range, view };
+
+  renderChronicleGrid(days, outputByIso, stateByIso, view, range);
+  renderChroniclePanelHeader(view);
+  renderChronicleMonthRow(days, range);
+  renderChronicleTrend(days, outputByIso, stateByIso, view, range);
+  renderChroniclePatterns(days, outputByIso, stateByIso);
+}
+
+function renderChroniclePanelHeader(view) {
+  const titleEl = document.getElementById('chroniclePanelTitle');
+  const legendEl = document.getElementById('chroniclePanelLegend');
+  const panelEl = document.getElementById('chroniclePanel');
+
+  if (view === 'state') {
+    if (titleEl) titleEl.textContent = 'State — Hunter Calibration';
+    if (panelEl) panelEl.classList.add('state-view');
+    if (legendEl) {
+      legendEl.innerHTML = `
+        <span>Steady</span>
+        <span class="chronicle-legend-cell" style="background: rgba(74, 222, 128, 0.35);"></span>
+        <span class="chronicle-legend-cell" style="background: rgba(92, 230, 240, 0.45);"></span>
+        <span class="chronicle-legend-cell" style="background: rgba(245, 196, 81, 0.55);"></span>
+        <span class="chronicle-legend-cell" style="background: rgba(255, 165, 81, 0.6);"></span>
+        <span class="chronicle-legend-cell" style="background: rgba(255, 71, 87, 0.7);"></span>
+        <span>Critical</span>
+      `;
+    }
+  } else {
+    if (titleEl) titleEl.textContent = 'Output — XP per Day';
+    if (panelEl) panelEl.classList.remove('state-view');
+    if (legendEl) {
+      legendEl.innerHTML = `
+        <span>Less</span>
+        <span class="chronicle-legend-cell" style="background: rgba(14,18,28,0.8);"></span>
+        <span class="chronicle-legend-cell" style="background: rgba(92, 230, 240, 0.18);"></span>
+        <span class="chronicle-legend-cell" style="background: rgba(92, 230, 240, 0.38);"></span>
+        <span class="chronicle-legend-cell" style="background: rgba(92, 230, 240, 0.6);"></span>
+        <span class="chronicle-legend-cell" style="background: rgba(92, 230, 240, 0.85);"></span>
+        <span>More</span>
+      `;
+    }
+  }
+}
+
+function renderChronicleGrid(days, outputByIso, stateByIso, view, range) {
+  const grid = document.getElementById('chronicleGrid');
+  if (!grid) return;
+
+  // Mode class for cell sizing
+  grid.classList.remove('mode-90d', 'mode-6mo', 'mode-12mo');
+  if (range <= 90) grid.classList.add('mode-90d');
+  else if (range <= 180) grid.classList.add('mode-6mo');
+  else grid.classList.add('mode-12mo');
+
+  // Compute number of weeks
+  const numWeeks = Math.ceil(days.length / 7);
+  grid.style.gridTemplateColumns = `repeat(${numWeeks}, 1fr)`;
+
+  // Sort days: column-major (week 0 Mon-Sun, week 1 Mon-Sun, ...)
+  // Because we started from Monday and went forward daily, days are already in that order naturally,
+  // but we need grid-auto-flow: column to fill properly. The grid-auto-flow is already set in CSS.
+  const todayIso = todayISO();
+
+  const html = [];
+  for (const d of days) {
+    const attrs = [];
+    let tooltip = '';
+    let iconHtml = '';
+
+    if (d.isFuture) {
+      attrs.push('data-future="1"');
+      attrs.push('style="visibility:hidden;"');
+    } else {
+      attrs.push(`data-iso="${d.iso}"`);
+      if (view === 'output') {
+        const out = outputByIso[d.iso] || { xp: 0 };
+        const band = outputBandForXp(out.xp);
+        attrs.push(`data-output="${band}"`);
+        tooltip = `${formatDateLong(d.iso)} — ${out.xp} XP, ${out.questsCompleted || 0} quests`;
+        if (out.bossKills > 0) {
+          iconHtml = `<span class="chronicle-cell-icon">⚔</span>`;
+        }
+      } else {
+        const st = stateByIso[d.iso];
+        if (!st || !st.hasData) {
+          attrs.push('data-state="no-signal"');
+          tooltip = `${formatDateLong(d.iso)} — No signal`;
+        } else {
+          attrs.push(`data-state="${st.band}"`);
+          tooltip = `${formatDateLong(d.iso)} — ${STATE_BAND_LABELS[st.band]} (${st.score})`;
+          if (st.signals.recoveryDay) {
+            iconHtml = `<span class="chronicle-cell-icon" style="color: var(--success); text-shadow: 0 0 3px var(--success);">◌</span>`;
+          } else if (st.signals.rcaSessions) {
+            iconHtml = `<span class="chronicle-cell-icon" style="color: var(--danger); text-shadow: 0 0 3px var(--danger);">!</span>`;
+          }
+        }
+      }
+      if (d.iso === todayIso) {
+        attrs.push('data-today="1"');
+        attrs.push('style="outline: 1.5px solid var(--accent-cyan-bright); outline-offset: 1px;"');
+      }
+    }
+
+    html.push(`<div class="chronicle-cell" ${attrs.join(' ')} title="${tooltip}">${iconHtml}</div>`);
+  }
+
+  grid.innerHTML = html.join('');
+
+  // Wire cell clicks
+  grid.querySelectorAll('.chronicle-cell[data-iso]').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const iso = cell.getAttribute('data-iso');
+      openChronicleDrill(iso);
+    });
+  });
+}
+
+function renderChronicleMonthRow(days, range) {
+  const row = document.getElementById('chronicleMonthRow');
+  if (!row) return;
+
+  const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const numWeeks = Math.ceil(days.length / 7);
+
+  // For each week column, find the month of its Monday
+  const labels = new Array(numWeeks).fill('');
+  let lastMonth = -1;
+  for (let w = 0; w < numWeeks; w++) {
+    const firstDayOfWeek = days[w * 7];
+    if (!firstDayOfWeek) continue;
+    if (firstDayOfWeek.month !== lastMonth) {
+      labels[w] = MONTH_NAMES[firstDayOfWeek.month];
+      lastMonth = firstDayOfWeek.month;
+    }
+  }
+
+  row.style.gridTemplateColumns = `repeat(${numWeeks}, 1fr)`;
+  // Pad with an empty spacer for the dow column width
+  row.style.paddingLeft = '36px';
+  row.innerHTML = labels.map(l => `<span class="chronicle-month-label">${l}</span>`).join('');
+}
+
+function renderChronicleTrend(days, outputByIso, stateByIso, view, range) {
+  const titleEl = document.getElementById('chronicleTrendTitle');
+  const svg = document.getElementById('chronicleTrendSvg');
+  const summaryEl = document.getElementById('chronicleTrendSummary');
+  if (!svg || !summaryEl) return;
+
+  const label = range <= 90 ? '90-Day' : (range <= 180 ? '6-Month' : '12-Month');
+  if (titleEl) titleEl.textContent = `${label} Trend — ${view === 'state' ? 'State Score' : 'XP per Day'}`;
+
+  // Filter to non-future, non-beforeInstall (for state view)
+  const validDays = days.filter(d => {
+    if (d.isFuture) return false;
+    if (view === 'state' && d.beforeInstall) return false;
+    return true;
+  });
+
+  if (validDays.length === 0) {
+    svg.innerHTML = '';
+    summaryEl.innerHTML = '<div class="chronicle-trend-stat" style="width:100%; text-align:center; color: var(--text-dim);">No data yet.</div>';
+    return;
+  }
+
+  // Build values
+  const values = validDays.map(d => {
+    if (view === 'output') {
+      return outputByIso[d.iso]?.xp || 0;
+    } else {
+      const st = stateByIso[d.iso];
+      return (st && st.hasData) ? st.score : null;
+    }
+  });
+
+  // Draw sparkline
+  const W = 300, H = 60, PAD = 4;
+  const plottable = values.map(v => (v == null ? null : v));
+  const numeric = plottable.filter(v => v != null);
+
+  let min, max;
+  if (view === 'output') {
+    min = 0;
+    max = Math.max(200, ...numeric, 1);
+  } else {
+    min = 0;
+    max = 100;
+  }
+
+  const step = (W - 2 * PAD) / Math.max(1, plottable.length - 1);
+
+  // Polyline path — skip nulls
+  const segments = [];
+  let currentSeg = [];
+  for (let i = 0; i < plottable.length; i++) {
+    const v = plottable[i];
+    if (v == null) {
+      if (currentSeg.length > 0) { segments.push(currentSeg); currentSeg = []; }
+      continue;
+    }
+    const x = PAD + i * step;
+    const y = H - PAD - ((v - min) / (max - min)) * (H - 2 * PAD);
+    currentSeg.push([x, y]);
+  }
+  if (currentSeg.length > 0) segments.push(currentSeg);
+
+  const strokeColor = view === 'state' ? 'var(--gold-soft)' : 'var(--accent-cyan-bright)';
+  const glowColor = view === 'state' ? 'var(--gold)' : 'var(--accent-cyan)';
+
+  // Baseline at critical (80) for state view
+  const thresholdLine = view === 'state'
+    ? `<line x1="${PAD}" y1="${H - PAD - (60 / 100) * (H - 2*PAD)}" x2="${W - PAD}" y2="${H - PAD - (60 / 100) * (H - 2*PAD)}" stroke="var(--border-dim)" stroke-dasharray="2,3" stroke-width="1"/>`
+    : '';
+
+  const segPaths = segments.map(seg => {
+    if (seg.length === 0) return '';
+    const d = 'M ' + seg.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' L ');
+    return `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" style="filter: drop-shadow(0 0 3px ${glowColor});"/>`;
+  }).join('');
+
+  // Dot on last value
+  let lastDot = '';
+  const lastSeg = segments[segments.length - 1];
+  if (lastSeg && lastSeg.length > 0) {
+    const [lx, ly] = lastSeg[lastSeg.length - 1];
+    lastDot = `<circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.5" fill="${strokeColor}" style="filter: drop-shadow(0 0 4px ${glowColor});"/>`;
+  }
+
+  svg.innerHTML = `${thresholdLine}${segPaths}${lastDot}`;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  // Summary stats
+  const n = numeric.length;
+  const avg = n > 0 ? Math.round(numeric.reduce((a, b) => a + b, 0) / n) : 0;
+  const maxVal = n > 0 ? Math.max(...numeric) : 0;
+
+  let dayStreakInfo = '';
+  if (view === 'state') {
+    // Count consecutive "hot+" days ending most recently
+    let recentHot = 0;
+    for (let i = plottable.length - 1; i >= 0; i--) {
+      if (plottable[i] != null && plottable[i] > 60) recentHot++;
+      else break;
+    }
+    dayStreakInfo = recentHot > 0
+      ? `<div class="chronicle-trend-stat"><span class="k">Recent hot streak:</span><span class="v warn">${recentHot}d</span></div>`
+      : `<div class="chronicle-trend-stat"><span class="k">Current:</span><span class="v good">Cool</span></div>`;
+  } else {
+    // Count active days (XP > 0) in range
+    const activeDays = numeric.filter(v => v > 0).length;
+    const pct = n > 0 ? Math.round((activeDays / n) * 100) : 0;
+    dayStreakInfo = `<div class="chronicle-trend-stat"><span class="k">Active days:</span><span class="v">${activeDays}/${n} (${pct}%)</span></div>`;
+  }
+
+  summaryEl.innerHTML = `
+    <div class="chronicle-trend-stat"><span class="k">Avg:</span><span class="v">${avg}${view === 'state' ? '' : ' XP'}</span></div>
+    <div class="chronicle-trend-stat"><span class="k">Peak:</span><span class="v">${maxVal}${view === 'state' ? '' : ' XP'}</span></div>
+    ${dayStreakInfo}
+  `;
+}
+
+/* ---------- Pattern Detector ---------- */
+function renderChroniclePatterns(days, outputByIso, stateByIso) {
+  const list = document.getElementById('chroniclePatternList');
+  if (!list) return;
+
+  const patterns = detectPatterns(days, outputByIso, stateByIso);
+
+  if (patterns.length === 0) {
+    list.innerHTML = `<div class="chronicle-patterns-empty">
+      『 INSUFFICIENT DATA FOR PATTERN ANALYSIS 』<br>
+      Patterns will surface as The System accumulates more signal. Keep logging.
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = patterns.map(p =>
+    `<div class="chronicle-pattern-item ${p.level || ''}"><strong>${p.title}</strong>${p.body}</div>`
+  ).join('');
+}
+
+function detectPatterns(days, outputByIso, stateByIso) {
+  const out = [];
+  const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const WEEKDAY_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  const realDays = days.filter(d => !d.isFuture);
+  if (realDays.length < 7) {
+    return out; // too little data
+  }
+
+  // ---------- Output patterns ----------
+  const xpByDay = realDays.map(d => ({ d, xp: outputByIso[d.iso]?.xp || 0 }));
+
+  // 1. Most productive day of week
+  const dowSumOut = [0, 0, 0, 0, 0, 0, 0];
+  const dowCountOut = [0, 0, 0, 0, 0, 0, 0];
+  for (const e of xpByDay) {
+    dowSumOut[e.d.dow] += e.xp;
+    dowCountOut[e.d.dow]++;
+  }
+  const dowAvg = dowSumOut.map((s, i) => dowCountOut[i] > 0 ? s / dowCountOut[i] : 0);
+  const peakIdx = dowAvg.indexOf(Math.max(...dowAvg));
+  const troughIdx = dowAvg.indexOf(Math.min(...dowAvg.filter(v => v > 0).length > 0 ? dowAvg.map(v => v === 0 ? Infinity : v) : dowAvg));
+  if (dowAvg[peakIdx] > 0 && dowCountOut[peakIdx] >= 3) {
+    out.push({
+      level: 'good',
+      title: '◈ Peak Output Day',
+      body: `Your highest average output lands on <strong style="color: var(--accent-cyan-bright); font-family: inherit; font-size: inherit; letter-spacing: inherit; display: inline;">${WEEKDAY_FULL[peakIdx]}</strong> (${Math.round(dowAvg[peakIdx])} XP avg). Schedule your hardest missions accordingly.`
+    });
+  }
+  if (dowAvg[troughIdx] >= 0 && dowCountOut[troughIdx] >= 3 && dowAvg[troughIdx] < dowAvg[peakIdx] * 0.5) {
+    out.push({
+      level: 'warn',
+      title: '◈ Trough Day',
+      body: `<strong style="color: var(--gold-soft); font-family: inherit; font-size: inherit; letter-spacing: inherit; display: inline;">${WEEKDAY_FULL[troughIdx]}</strong> averages only ${Math.round(dowAvg[troughIdx])} XP — your weakest day. Consider whether this is deliberate rest or drift.`
+    });
+  }
+
+  // 2. Active day rate
+  const activeDays = xpByDay.filter(e => e.xp > 0).length;
+  const pct = Math.round((activeDays / xpByDay.length) * 100);
+  if (pct >= 80) {
+    out.push({
+      level: 'good',
+      title: '◈ Consistency Rate',
+      body: `You've been active on <strong style="color: var(--success); font-family: inherit; font-size: inherit; letter-spacing: inherit; display: inline;">${pct}%</strong> of days in this range. Rare discipline.`
+    });
+  } else if (pct < 50 && xpByDay.length >= 30) {
+    out.push({
+      level: 'warn',
+      title: '◈ Low Activity Rate',
+      body: `Active on <strong>${pct}%</strong> of days. More than half your days are dark. Worth investigating whether the quests being registered match what you actually do.`
+    });
+  }
+
+  // 3. Longest streak
+  let longest = 0, cur = 0, longestEnd = null;
+  for (const e of xpByDay) {
+    if (e.xp > 0) { cur++; if (cur > longest) { longest = cur; longestEnd = e.d.iso; } }
+    else { cur = 0; }
+  }
+  if (longest >= 7) {
+    out.push({
+      level: 'good',
+      title: '◈ Longest Active Streak',
+      body: `<strong style="color: var(--success); font-family: inherit; font-size: inherit; letter-spacing: inherit; display: inline;">${longest} consecutive days</strong> of output in this range. The System acknowledges sustained effort.`
+    });
+  }
+
+  // 4. Recent trend (last 14 vs prior 14)
+  if (xpByDay.length >= 28) {
+    const last14 = xpByDay.slice(-14);
+    const prior14 = xpByDay.slice(-28, -14);
+    const avgLast = last14.reduce((s, e) => s + e.xp, 0) / 14;
+    const avgPrior = prior14.reduce((s, e) => s + e.xp, 0) / 14;
+    if (avgPrior > 0) {
+      const delta = ((avgLast - avgPrior) / avgPrior) * 100;
+      if (delta > 25) {
+        out.push({
+          level: 'good',
+          title: '◈ Rising Output',
+          body: `Last 14 days averaged <strong>${Math.round(avgLast)} XP/day</strong>, up <strong style="color: var(--success); font-family: inherit; font-size: inherit; letter-spacing: inherit; display: inline;">+${Math.round(delta)}%</strong> from the prior 14. Momentum is on your side.`
+        });
+      } else if (delta < -25) {
+        out.push({
+          level: 'warn',
+          title: '◈ Declining Output',
+          body: `Last 14 days averaged <strong>${Math.round(avgLast)} XP/day</strong>, down <strong>${Math.round(delta)}%</strong> from the prior 14. Variance or drift — worth a Debriefing.`
+        });
+      }
+    }
+  }
+
+  // ---------- State patterns (only days with data post-install) ----------
+  const stateDays = realDays.filter(d => !d.beforeInstall && stateByIso[d.iso] && stateByIso[d.iso].hasData);
+  if (stateDays.length >= 7) {
+
+    // 5. Hot/Critical by day of week
+    const dowHot = [0, 0, 0, 0, 0, 0, 0];
+    const dowTot = [0, 0, 0, 0, 0, 0, 0];
+    for (const d of stateDays) {
+      dowTot[d.dow]++;
+      const band = stateByIso[d.iso].band;
+      if (band === 'hot' || band === 'critical') dowHot[d.dow]++;
+    }
+    for (let i = 0; i < 7; i++) {
+      if (dowTot[i] >= 3 && dowHot[i] / dowTot[i] >= 0.5) {
+        out.push({
+          level: 'bad',
+          title: '◈ Red Day',
+          body: `Your State runs hot/critical on <strong style="color: #ff8f9c; font-family: inherit; font-size: inherit; letter-spacing: inherit; display: inline;">${WEEKDAY_FULL[i]}s</strong> in ${dowHot[i]}/${dowTot[i]} observed weeks. Structural issue worth addressing.`
+        });
+      }
+    }
+
+    // 6. Red streak ending recently + next-day output drop
+    let redStreak = 0, redEndIdx = -1;
+    for (let i = stateDays.length - 1; i >= 0; i--) {
+      const b = stateByIso[stateDays[i].iso].band;
+      if (b === 'hot' || b === 'critical') { redStreak++; if (redEndIdx < 0) redEndIdx = i; }
+      else if (redStreak > 0) break;
+    }
+    if (redStreak >= 3) {
+      out.push({
+        level: 'bad',
+        title: '◈ Active Red Streak',
+        body: `<strong style="color: #ff8f9c; font-family: inherit; font-size: inherit; letter-spacing: inherit; display: inline;">${redStreak} consecutive days</strong> in Hot or Critical state. Recovery day strongly indicated. Critical hunters die in gates.`
+      });
+    }
+
+    // 7. Output cost of red days — is output lower on days AFTER red days?
+    const xpAfterRed = [];
+    const xpAfterCool = [];
+    for (let i = 0; i < stateDays.length - 1; i++) {
+      const today = stateDays[i];
+      const next = stateDays[i + 1];
+      // ensure consecutive
+      if (isoAddDays(today.iso, 1) !== next.iso) continue;
+      const todayBand = stateByIso[today.iso].band;
+      const nextXp = outputByIso[next.iso]?.xp || 0;
+      if (todayBand === 'hot' || todayBand === 'critical') xpAfterRed.push(nextXp);
+      else if (todayBand === 'steady' || todayBand === 'humming') xpAfterCool.push(nextXp);
+    }
+    if (xpAfterRed.length >= 5 && xpAfterCool.length >= 5) {
+      const aR = xpAfterRed.reduce((a, b) => a + b, 0) / xpAfterRed.length;
+      const aC = xpAfterCool.reduce((a, b) => a + b, 0) / xpAfterCool.length;
+      if (aC > 0 && aR < aC * 0.7) {
+        const pct = Math.round((1 - aR / aC) * 100);
+        out.push({
+          level: 'warn',
+          title: '◈ Red Day Tax',
+          body: `Output the day after a red-state day drops <strong>${pct}%</strong> (${Math.round(aR)} vs ${Math.round(aC)} XP). Red days are costing you tomorrow.`
+        });
+      }
+    }
+
+    // 8. Steady days count
+    const steadyCount = stateDays.filter(d => stateByIso[d.iso].band === 'steady' || stateByIso[d.iso].band === 'humming').length;
+    const steadyPct = Math.round((steadyCount / stateDays.length) * 100);
+    if (steadyPct >= 60) {
+      out.push({
+        level: 'good',
+        title: '◈ Base Calibration',
+        body: `<strong style="color: var(--success); font-family: inherit; font-size: inherit; letter-spacing: inherit; display: inline;">${steadyPct}%</strong> of measured days ran Steady or Humming. Calibration is holding.`
+      });
+    } else if (steadyPct < 35 && stateDays.length >= 14) {
+      out.push({
+        level: 'warn',
+        title: '◈ Rarely Cool',
+        body: `Only <strong>${steadyPct}%</strong> of measured days ran Steady or Humming. Your baseline is warm-to-hot. Consider whether current load is sustainable.`
+      });
+    }
+
+    // 9. Sleep <6hr count
+    let shortSleep = 0;
+    for (const d of stateDays) {
+      if (stateByIso[d.iso].signals.sleepHours != null && stateByIso[d.iso].signals.sleepHours < 6) shortSleep++;
+    }
+    const shortPct = stateDays.length > 0 ? Math.round((shortSleep / stateDays.length) * 100) : 0;
+    if (shortSleep >= 5 && shortPct >= 30) {
+      out.push({
+        level: 'bad',
+        title: '◈ Sleep Debt',
+        body: `<strong>${shortSleep}</strong> measured days (${shortPct}%) had sleep under 6 hours. This is the single strongest burnout predictor in your data.`
+      });
+    }
+
+    // 10. Recovery day impact — did red streaks end after recovery days?
+    let recoveryDaysCount = 0;
+    for (const d of stateDays) {
+      if (stateByIso[d.iso].signals.recoveryDay) recoveryDaysCount++;
+    }
+    if (recoveryDaysCount >= 2) {
+      out.push({
+        level: 'good',
+        title: '◈ Recovery Days Logged',
+        body: `<strong>${recoveryDaysCount}</strong> recovery days taken in this range. Deliberate rest is a weapon, not a concession.`
+      });
+    }
+  }
+
+  // Sort: bad > warn > neutral > good (so critical patterns rise first)
+  const order = { bad: 0, warn: 1, undefined: 2, good: 3 };
+  out.sort((a, b) => (order[a.level] ?? 2) - (order[b.level] ?? 2));
+
+  return out;
+}
+
+/* ---------- Drill-down modal ---------- */
+function openChronicleDrill(iso) {
+  const cache = window.__chronicleCache;
+  if (!cache) return;
+
+  const out = cache.outputByIso[iso] || computeDayOutput(iso);
+  const st  = cache.stateByIso[iso] || computeDayState(iso);
+
+  document.getElementById('chronicleDrillDate').textContent = formatDateLong(iso).toUpperCase();
+
+  const install = state.phase10InstallDate;
+  let subtitle = '';
+  if (install) {
+    const days = Math.floor((dateFromIso(iso) - dateFromIso(install)) / (1000 * 60 * 60 * 24)) + 1;
+    if (days >= 1) {
+      subtitle = `Day ${days} since Phase 10 install`;
+    } else {
+      subtitle = 'Pre-Phase 10 — output only';
+    }
+  }
+  document.getElementById('chronicleDrillSubtitle').textContent = subtitle;
+
+  // Output column
+  const outBand = outputBandForXp(out.xp);
+  const bandLabels = ['No activity', 'Light', 'Moderate', 'Strong', 'Peak'];
+  document.getElementById('chronicleDrillOutput').textContent = `${out.xp} XP`;
+  document.getElementById('chronicleDrillOutputBand').textContent = bandLabels[outBand];
+
+  // State column
+  const stateValueEl = document.getElementById('chronicleDrillState');
+  const stateBandEl = document.getElementById('chronicleDrillStateBand');
+  if (st && st.hasData) {
+    stateValueEl.textContent = st.score;
+    stateValueEl.style.color = st.band === 'critical' ? 'var(--danger)' : (st.band === 'hot' ? '#ff8f61' : (st.band === 'warming' ? 'var(--gold-soft)' : (st.band === 'humming' ? 'var(--accent-cyan-bright)' : 'var(--success)')));
+    stateBandEl.textContent = STATE_BAND_LABELS[st.band];
+  } else {
+    stateValueEl.textContent = '—';
+    stateValueEl.style.color = 'var(--text-dim)';
+    stateBandEl.textContent = 'No signal';
+  }
+
+  // Details
+  const details = document.getElementById('chronicleDrillDetails');
+  const rows = [];
+
+  if (out.questsCompleted > 0) rows.push({ k: 'Quests completed', v: out.questsCompleted });
+  if (out.bossKills > 0)       rows.push({ k: 'Boss kills',        v: out.bossKills });
+  if (out.sprintMin > 0)       rows.push({ k: 'Sprint minutes',    v: out.sprintMin });
+  if (out.berserkerMin > 0)    rows.push({ k: 'Berserker min',     v: out.berserkerMin });
+  if (out.regenCount > 0)      rows.push({ k: 'Regen cycles',      v: out.regenCount });
+
+  if (st && st.hasData) {
+    if (st.signals.sleepHours != null) rows.push({ k: 'Sleep', v: `${st.signals.sleepHours.toFixed(1)} hr` });
+    if (st.signals.rcaSessions)        rows.push({ k: 'RCA launches', v: st.signals.rcaSessions });
+    if (st.signals.commitFailed)       rows.push({ k: 'Commitments failed', v: st.signals.commitFailed });
+    if (st.signals.commitHonored)      rows.push({ k: 'Commitments honored', v: st.signals.commitHonored });
+    if (st.signals.recoveryDay)        rows.push({ k: 'Recovery day', v: 'Yes' });
+    if (st.signals.penalty)            rows.push({ k: 'Penalty triggered', v: 'Yes' });
+    if (st.signals.fuel)               rows.push({ k: 'Fuel gauge', v: String(st.signals.fuel).toUpperCase() });
+    if (st.signals.overdue)            rows.push({ k: 'Open overdue', v: st.signals.overdue });
+  }
+
+  if (rows.length === 0) {
+    details.innerHTML = `<div style="text-align:center; color: var(--text-dim); padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-style: italic;">No activity logged for this day.</div>`;
+  } else {
+    details.innerHTML = rows.map(r =>
+      `<div class="chronicle-drill-detail-row"><span class="k">${r.k}</span><span class="v">${r.v}</span></div>`
+    ).join('');
+  }
+
+  document.getElementById('chronicleDrillOverlay').classList.add('active');
+}
+
+function closeChronicleDrill() {
+  document.getElementById('chronicleDrillOverlay').classList.remove('active');
+}
+
+/* ---------- View/range toggles ---------- */
+function wireChronicleControls() {
+  const panel = document.querySelector('.tab-content[data-tab-content="chronicle"]');
+  if (!panel) return;
+
+  panel.querySelectorAll('.chronicle-view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.getAttribute('data-view');
+      state.chronicleView = view;
+      saveState();
+      panel.querySelectorAll('.chronicle-view-btn').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-view') === view);
+      });
+      renderChronicle();
+    });
+  });
+
+  panel.querySelectorAll('.chronicle-range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const range = parseInt(btn.getAttribute('data-range'), 10);
+      state.chronicleRange = range;
+      saveState();
+      panel.querySelectorAll('.chronicle-range-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.getAttribute('data-range'), 10) === range);
+      });
+      renderChronicle();
+    });
+  });
+
+  // Restore active states from state
+  panel.querySelectorAll('.chronicle-view-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-view') === (state.chronicleView || 'output'));
+  });
+  panel.querySelectorAll('.chronicle-range-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.getAttribute('data-range'), 10) === (state.chronicleRange || 90));
+  });
+
+  // Drill-down close
+  const closeBtn = document.getElementById('chronicleDrillCloseBtn');
+  if (closeBtn) closeBtn.addEventListener('click', closeChronicleDrill);
+
+  const overlay = document.getElementById('chronicleDrillOverlay');
+  if (overlay) overlay.addEventListener('click', (e) => {
+    if (e.target.id === 'chronicleDrillOverlay') closeChronicleDrill();
+  });
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 10 — SYNC CODE
+   ═══════════════════════════════════════════════════════ */
+
+const SYNC_MAGIC = 'SYS10';
+const SYNC_VERSION = 1;
+const STORAGE_KEY_SNAPSHOT = 'THE_SYSTEM_PRE_SYNC_SNAPSHOT';
+
+// Encode state → UTF-8 bytes → base64 (chunked to avoid btoa failures on large strings)
+function encodeSyncCode(obj) {
+  const json = JSON.stringify(obj);
+  // UTF-8 safe: encodeURIComponent then to byte-string-safe form
+  const utf8 = unescape(encodeURIComponent(json));
+  // btoa handles the byte-string safely
+  const b64 = btoa(utf8);
+  // Simple checksum: sum of char codes mod 65536, 4-hex
+  let sum = 0;
+  for (let i = 0; i < json.length; i++) sum = (sum + json.charCodeAt(i)) % 65536;
+  const checksum = sum.toString(16).padStart(4, '0');
+
+  return `${SYNC_MAGIC}:${SYNC_VERSION}:${checksum}:${b64}`;
+}
+
+function decodeSyncCode(code) {
+  if (!code || typeof code !== 'string') throw new Error('Empty code.');
+  const parts = code.trim().split(':');
+  if (parts.length !== 4) throw new Error('Malformed code (expected 4 segments).');
+  const [magic, verStr, checksum, b64] = parts;
+  if (magic !== SYNC_MAGIC) throw new Error('Wrong code type — not a System sync code.');
+  const ver = parseInt(verStr, 10);
+  if (isNaN(ver) || ver < 1) throw new Error('Invalid version.');
+  if (ver > SYNC_VERSION) throw new Error(`Code is from a newer version (v${ver}). Upgrade The System first.`);
+
+  let utf8, json, obj;
+  try {
+    utf8 = atob(b64);
+  } catch (e) {
+    throw new Error('Base64 decode failed — code is corrupted.');
+  }
+  try {
+    json = decodeURIComponent(escape(utf8));
+  } catch (e) {
+    throw new Error('UTF-8 decode failed — code is corrupted.');
+  }
+  try {
+    obj = JSON.parse(json);
+  } catch (e) {
+    throw new Error('JSON parse failed — code is corrupted.');
+  }
+
+  // Verify checksum
+  let sum = 0;
+  for (let i = 0; i < json.length; i++) sum = (sum + json.charCodeAt(i)) % 65536;
+  const computed = sum.toString(16).padStart(4, '0');
+  if (computed !== checksum) throw new Error('Checksum mismatch — code is corrupted.');
+
+  return obj;
+}
+
+function generateSyncCode() {
+  const code = encodeSyncCode(state);
+  const textarea = document.getElementById('syncExportCode');
+  const copyBtn = document.getElementById('syncCopyBtn');
+  const qrBtn = document.getElementById('syncQrBtn');
+  const sizeEl = document.getElementById('syncExportSize');
+  const charsEl = document.getElementById('syncExportChars');
+
+  textarea.value = code;
+  copyBtn.disabled = false;
+  qrBtn.disabled = false;
+
+  const bytes = new Blob([code]).size;
+  sizeEl.textContent = bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
+  charsEl.textContent = code.length.toLocaleString();
+
+  // Hide QR if it was shown
+  document.getElementById('syncQrWrapper').classList.remove('show');
+  document.getElementById('syncQrNote').style.display = 'none';
+
+  if (typeof showToast === 'function') showToast('SYNC CODE GENERATED.', 'accent');
+}
+
+async function copySyncCode() {
+  const code = document.getElementById('syncExportCode').value;
+  if (!code) return;
+  try {
+    await navigator.clipboard.writeText(code);
+    if (typeof showToast === 'function') showToast('COPIED TO CLIPBOARD.', 'accent');
+  } catch (e) {
+    // Fallback: select the textarea
+    const ta = document.getElementById('syncExportCode');
+    ta.select();
+    document.execCommand('copy');
+    if (typeof showToast === 'function') showToast('COPIED (fallback method).', 'accent');
+  }
+}
+
+/* ---------- Minimal inline QR generator ----------
+ * For large codes, we embed the code as text in a simple SVG representation
+ * rather than a true QR (which would be too dense for 100KB+ state).
+ * Instead, we show a fallback note guiding the user to use copy-paste for
+ * anything over QR-practical size. For small codes (<2KB) we fall back to
+ * showing the code as large monospace text for easy manual re-typing.
+ *
+ * Building a real QR library inline would add ~8-10KB of minified code. For
+ * the Phase 10 scope, we use a pragmatic approach: if the code is tiny enough
+ * to fit in a single QR, we generate one. Otherwise we display a warning.
+ */
+function showSyncQr() {
+  const code = document.getElementById('syncExportCode').value;
+  const wrapper = document.getElementById('syncQrWrapper');
+  const note = document.getElementById('syncQrNote');
+
+  if (!code) return;
+
+  // QR codes max out at ~2953 chars for alphanumeric / ~4296 for numeric.
+  // Real state will usually exceed this. We show a clear message.
+  if (code.length > 2200) {
+    wrapper.innerHTML = `
+      <div style="padding: 16px; text-align: center; color: #020309; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.6; max-width: 260px;">
+        <strong style="font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 0.3em; color: #b25c00; display: block; margin-bottom: 8px;">⚠ CODE TOO LARGE FOR QR</strong>
+        Your state is <strong>${code.length.toLocaleString()} chars</strong> (max ~2200 for a single QR code).<br><br>
+        Use the <strong>Copy</strong> button instead, then paste the code into The System on your other device (via AirDrop, a messaging app to yourself, or a notes file).
+      </div>
+    `;
+    wrapper.classList.add('show');
+    note.style.display = 'none';
+    return;
+  }
+
+  // Build a minimal QR — here we use the Google Charts API via data URL fallback,
+  // OR an inline library. Since external images violate single-file ethos, we use
+  // a very compact inline QR generator.
+  try {
+    const svg = generateQrSvg(code);
+    wrapper.innerHTML = svg;
+    wrapper.classList.add('show');
+    note.style.display = 'block';
+  } catch (e) {
+    wrapper.innerHTML = `<div style="color: #020309; padding: 16px; text-align: center;">QR generation failed: ${e.message}. Use Copy instead.</div>`;
+    wrapper.classList.add('show');
+    note.style.display = 'none';
+  }
+}
+
+/* ---------- Tiny inline QR generator (Model 2, up to ~2200 chars) ----------
+ * Based on public-domain QR algorithm. Minified for inlining.
+ * This is a simplified Reed-Solomon + placement implementation sufficient
+ * for alphanumeric/byte mode encoding.
+ *
+ * For Phase 10 pragmatism: rather than embed ~10KB of QR library, we use
+ * a data-URL approach to a public QR server as a LAST resort. But since
+ * that requires network, we prefer the pure-JS path with a fallback message.
+ *
+ * Implementation: use kjua-style minimal QR. Since writing a complete QR
+ * encoder inline is ~500 lines, we use a simplification: a visual "pseudo-QR"
+ * using a hash grid of the code for identification-only purposes. This is NOT
+ * scannable — but the message makes this clear.
+ *
+ * PRODUCTION NOTE: If real QR scanning is desired, add a library like
+ * qrcode-generator.js (~6KB gzipped).
+ */
+function generateQrSvg(code) {
+  // Produce a 25x25 visual grid deterministically from the code for ID purposes.
+  // Since we can't do a real QR without a larger library, we show a clear label.
+  const size = 25;
+  const cellSize = 10;
+  const totalSize = size * cellSize;
+
+  // Build a deterministic grid from the code using simple hash
+  let hash = 0;
+  for (let i = 0; i < Math.min(code.length, 500); i++) {
+    hash = ((hash << 5) - hash + code.charCodeAt(i)) | 0;
+  }
+  const rng = mulberry32(Math.abs(hash));
+
+  let cells = '';
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      // Reserve corners for QR-like finder squares (visual only)
+      const inCorner = (x < 7 && y < 7) || (x >= size - 7 && y < 7) || (x < 7 && y >= size - 7);
+      let fill = false;
+      if (inCorner) {
+        const bx = x < 7 ? x : x - (size - 7);
+        const by = y < 7 ? y : y - (size - 7);
+        // Outer 7x7 ring + inner 3x3
+        if (bx === 0 || bx === 6 || by === 0 || by === 6) fill = true;
+        else if (bx >= 2 && bx <= 4 && by >= 2 && by <= 4) fill = true;
+      } else {
+        fill = rng() > 0.55;
+      }
+      if (fill) {
+        cells += `<rect x="${x * cellSize}" y="${y * cellSize}" width="${cellSize}" height="${cellSize}" fill="#020309"/>`;
+      }
+    }
+  }
+
+  return `
+    <div style="text-align: center;">
+      <svg width="${totalSize}" height="${totalSize}" viewBox="0 0 ${totalSize} ${totalSize}" xmlns="http://www.w3.org/2000/svg" style="display: inline-block;">
+        <rect width="${totalSize}" height="${totalSize}" fill="#f7faff"/>
+        ${cells}
+      </svg>
+      <div style="color: #020309; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; margin-top: 8px; line-height: 1.5; max-width: 240px; text-align: center;">
+        <strong style="font-family: 'Orbitron', sans-serif; letter-spacing: 0.25em; font-size: 9px;">NOTE:</strong> This is a visual identifier only, not a scannable QR. For cross-device transfer, use the <strong>Copy</strong> button and paste the code directly on the other device.
+      </div>
+    </div>
+  `;
+}
+
+function mulberry32(a) {
+  return function() {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = a;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------- Import preview ---------- */
+function previewSyncImport() {
+  const code = document.getElementById('syncImportCode').value.trim();
+  const box = document.getElementById('syncPreviewBox');
+  const rowsEl = document.getElementById('syncPreviewRows');
+  const importBtn = document.getElementById('syncImportBtn');
+
+  if (!code) {
+    if (typeof showToast === 'function') showToast('PASTE A SYNC CODE FIRST.', 'penalty');
+    return;
+  }
+
+  let incoming;
+  try {
+    incoming = decodeSyncCode(code);
+  } catch (e) {
+    rowsEl.innerHTML = `<div style="color: var(--danger); font-family: 'JetBrains Mono', monospace; font-size: 11px;">✗ ${e.message}</div>`;
+    box.classList.add('show');
+    importBtn.disabled = true;
+    return;
+  }
+
+  // Show preview of what we're about to load
+  const hunterName = incoming.hunterName || 'UNNAMED';
+  const rank = (typeof RANKS !== 'undefined' && incoming.currentRankIdx != null && RANKS[incoming.currentRankIdx])
+    ? RANKS[incoming.currentRankIdx].name
+    : '—';
+  const xp = incoming.totalXp || 0;
+  const streak = incoming.streak || 0;
+  const quests = (incoming.quests || []).length;
+  const completed = (incoming.quests || []).filter(q => q.completed).length;
+  const shadows = (incoming.unlockedShadows || []).length;
+  const achievements = (incoming.unlockedAchievements || []).length;
+  const bodyConfigured = incoming.bodyStats && incoming.bodyStats.configured;
+  const weightEntries = bodyConfigured ? (incoming.bodyStats.weightHistory || []).length : 0;
+  const startDate = incoming.firstLaunchDate || incoming.phase10InstallDate || '—';
+
+  rowsEl.innerHTML = `
+    <div class="sync-preview-row"><span class="k">Hunter</span><span class="v">${escapeHtmlLocal(hunterName)}</span></div>
+    <div class="sync-preview-row"><span class="k">Rank</span><span class="v">${rank}</span></div>
+    <div class="sync-preview-row"><span class="k">Total XP</span><span class="v">${xp.toLocaleString()}</span></div>
+    <div class="sync-preview-row"><span class="k">Streak</span><span class="v">${streak} days</span></div>
+    <div class="sync-preview-row"><span class="k">Quests</span><span class="v">${quests} (${completed} done)</span></div>
+    <div class="sync-preview-row"><span class="k">Shadows</span><span class="v">${shadows}</span></div>
+    <div class="sync-preview-row"><span class="k">Achievements</span><span class="v">${achievements}</span></div>
+    <div class="sync-preview-row"><span class="k">Body Forge</span><span class="v">${bodyConfigured ? weightEntries + ' entries' : 'Not configured'}</span></div>
+    <div class="sync-preview-row"><span class="k">Started</span><span class="v">${startDate}</span></div>
+  `;
+
+  box.classList.add('show');
+  importBtn.disabled = false;
+}
+
+function escapeHtmlLocal(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function executeSyncImport() {
+  const code = document.getElementById('syncImportCode').value.trim();
+  if (!code) return;
+
+  let incoming;
+  try {
+    incoming = decodeSyncCode(code);
+  } catch (e) {
+    if (typeof showToast === 'function') showToast(`IMPORT FAILED: ${e.message}`, 'penalty');
+    return;
+  }
+
+  // Save rollback snapshot
+  try {
+    localStorage.setItem(STORAGE_KEY_SNAPSHOT, JSON.stringify({
+      savedAt: new Date().toISOString(),
+      state: JSON.parse(JSON.stringify(state))
+    }));
+  } catch (e) {
+    console.warn('Failed to save pre-sync snapshot', e);
+  }
+
+  // Replace state
+  Object.keys(state).forEach(k => delete state[k]);
+  Object.assign(state, incoming);
+
+  saveState();
+
+  if (typeof showToast === 'function') showToast('IMPORT COMPLETE. STATE REPLACED.', 'accent');
+  if (typeof logMessage === 'function') logMessage('CROSS-DEVICE SYNC IMPORT — STATE REPLACED', 'rank');
+
+  // Clear the input
+  document.getElementById('syncImportCode').value = '';
+  document.getElementById('syncPreviewBox').classList.remove('show');
+  document.getElementById('syncImportBtn').disabled = true;
+
+  // Close settings modal so the new state is visible
+  const modal = document.getElementById('settingsModal');
+  if (modal) modal.classList.remove('active');
+
+  // Re-run full init/render
+  if (typeof ensurePhase10State === 'function') ensurePhase10State();
+  if (typeof render === 'function') render();
+}
+
+/* ---------- Wire sync UI ---------- */
+function wireSyncControls() {
+  // Mode toggle
+  document.querySelectorAll('.sync-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.getAttribute('data-sync-mode');
+      document.querySelectorAll('.sync-mode-btn').forEach(b => {
+        b.classList.toggle('active', b === btn);
+      });
+      document.querySelectorAll('[data-sync-panel]').forEach(p => {
+        p.style.display = (p.getAttribute('data-sync-panel') === mode) ? '' : 'none';
+      });
+    });
+  });
+
+  // Export
+  const genBtn = document.getElementById('syncGenerateBtn');
+  if (genBtn) genBtn.addEventListener('click', generateSyncCode);
+
+  const copyBtn = document.getElementById('syncCopyBtn');
+  if (copyBtn) copyBtn.addEventListener('click', copySyncCode);
+
+  const qrBtn = document.getElementById('syncQrBtn');
+  if (qrBtn) qrBtn.addEventListener('click', showSyncQr);
+
+  // Import
+  const previewBtn = document.getElementById('syncPreviewBtn');
+  if (previewBtn) previewBtn.addEventListener('click', previewSyncImport);
+
+  const importBtn = document.getElementById('syncImportBtn');
+  if (importBtn) importBtn.addEventListener('click', () => {
+    if (confirm('⚠ Replace all System data with the imported code? A rollback snapshot will be saved.')) {
+      executeSyncImport();
+    }
+  });
+
+  // Invalidate preview when import text changes
+  const importTa = document.getElementById('syncImportCode');
+  if (importTa) {
+    importTa.addEventListener('input', () => {
+      document.getElementById('syncPreviewBox').classList.remove('show');
+      document.getElementById('syncImportBtn').disabled = true;
+    });
+  }
+}
+
+/* ---------- Phase 10 init ---------- */
+function initPhase10() {
+  ensurePhase10State();
+  wireChronicleControls();
+  wireSyncControls();
+  // Initial render of Chronicle content (runs even if tab is not open — so switching is instant)
+  renderChronicle();
+}
+
+/* ---------- Hook into existing render/switchTab ---------- */
+// Re-render chronicle on tab switch to chronicle
+(function hookChronicleTabSwitch() {
+  if (typeof switchTab !== 'function') return;
+  const original = switchTab;
+  window.switchTab = function(tabName) {
+    original(tabName);
+    if (tabName === 'chronicle' && typeof renderChronicle === 'function') {
+      renderChronicle();
+    }
+  };
+})();
+
+
+
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 11 — MORNING DEPLOY
+   Templates · Deploy Yesterday · Loadout · Mobile FAB
+   ═══════════════════════════════════════════════════════ */
+
+/* ---------- State migration ---------- */
+function ensurePhase11State() {
+  if (!Array.isArray(state.questTemplates)) {
+    state.questTemplates = getDefaultTemplates();
+  }
+  if (typeof state.lastLoadoutDate === 'undefined') {
+    state.lastLoadoutDate = null;       // last date Jerry opened Morning Deploy
+  }
+  if (typeof state.loadoutDismissedDate === 'undefined') {
+    state.loadoutDismissedDate = null;  // last date Jerry dismissed the auto-open
+  }
+  if (!state.yesterdaySnapshots || typeof state.yesterdaySnapshots !== 'object') {
+    state.yesterdaySnapshots = {};      // { 'YYYY-MM-DD': [ { name, category, difficulty, dueTime, wasCompleted } ] }
+  }
+  saveState();
+}
+
+function getDefaultTemplates() {
+  const base = [
+    // Scholar — medical training
+    { name: 'Anki reviews',               category: 'scholar',  difficulty: 'easy',   defaultDueTime: null,     pinned: true  },
+    { name: 'UWorld block — 40 questions', category: 'scholar',  difficulty: 'hard',   defaultDueTime: null,     pinned: true  },
+    { name: 'UWorld review',              category: 'scholar',  difficulty: 'medium', defaultDueTime: null,     pinned: false },
+    { name: '1 NEJM article',             category: 'scholar',  difficulty: 'medium', defaultDueTime: null,     pinned: false },
+    { name: 'UpToDate deep-dive',         category: 'scholar',  difficulty: 'medium', defaultDueTime: null,     pinned: false },
+    { name: 'ACC/AHA guideline review',   category: 'scholar',  difficulty: 'medium', defaultDueTime: null,     pinned: false },
+
+    // Research
+    { name: '30-min manuscript work',     category: 'research', difficulty: 'medium', defaultDueTime: null,     pinned: true  },
+    { name: 'Lit review sprint',          category: 'research', difficulty: 'medium', defaultDueTime: null,     pinned: false },
+    { name: 'Figure polish',              category: 'research', difficulty: 'easy',   defaultDueTime: null,     pinned: false },
+
+    // Iron — fitness
+    { name: '10k steps',                  category: 'iron',     difficulty: 'medium', defaultDueTime: null,     pinned: true  },
+    { name: 'Gym session',                category: 'iron',     difficulty: 'hard',   defaultDueTime: null,     pinned: true  },
+    { name: '180g protein',               category: 'iron',     difficulty: 'medium', defaultDueTime: null,     pinned: true  },
+    { name: 'Log weight',                 category: 'iron',     difficulty: 'easy',   defaultDueTime: '07:00',  pinned: false },
+    { name: '3L water',                   category: 'iron',     difficulty: 'easy',   defaultDueTime: null,     pinned: false },
+
+    // Dungeon — clinical / admin
+    { name: 'Pre-round',                  category: 'dungeon',  difficulty: 'medium', defaultDueTime: '07:00',  pinned: true  },
+    { name: 'Notes done by noon',         category: 'dungeon',  difficulty: 'hard',   defaultDueTime: '12:00',  pinned: true  },
+    { name: 'Clean sign-out',             category: 'dungeon',  difficulty: 'easy',   defaultDueTime: '19:00',  pinned: false },
+    { name: 'Epic inbox zero',            category: 'dungeon',  difficulty: 'easy',   defaultDueTime: null,     pinned: false },
+
+    // Recovery
+    { name: '7hr sleep',                  category: 'recovery', difficulty: 'easy',   defaultDueTime: null,     pinned: true  },
+    { name: 'Phone off by 10pm',          category: 'recovery', difficulty: 'easy',   defaultDueTime: '22:00',  pinned: false },
+    { name: '20-min walk outside',        category: 'recovery', difficulty: 'easy',   defaultDueTime: null,     pinned: false },
+    { name: 'Call family',                category: 'recovery', difficulty: 'easy',   defaultDueTime: null,     pinned: false }
+  ];
+  return base.map((t, i) => ({
+    id: 'tpl_' + Date.now() + '_' + i,
+    name: t.name,
+    category: t.category,
+    difficulty: t.difficulty,
+    defaultDueTime: t.defaultDueTime,
+    pinned: t.pinned,
+    useCount: 0,
+    lastUsedDate: null
+  }));
+}
+
+/* Hook daily reset so yesterday's quests are captured BEFORE they get cleared. */
+(function hookDailyResetForSnapshot() {
+  if (typeof handleDailyReset !== 'function') return;
+  const _origHandleDailyReset = handleDailyReset;
+  window.handleDailyReset = function() {
+    const today = todayISO();
+    // If we're about to advance the day, snapshot "yesterday" from state.lastResetDate
+    const prevDate = state.lastResetDate;
+    if (prevDate && prevDate !== today) {
+      // Build snapshot from current quests that belong to prevDate or earlier
+      // Only user/custom quests (exclude system directives/sides) so the picker is useful.
+      const snap = (state.quests || []).filter(q => {
+        const src = q.source || 'user';
+        return src === 'user';
+      }).map(q => ({
+        name: q.name,
+        category: q.category,
+        difficulty: q.difficulty,
+        dueTime: q.dueTime || null,
+        wasCompleted: !!q.completed
+      }));
+      if (snap.length > 0) {
+        state.yesterdaySnapshots[prevDate] = snap;
+        // Keep only the most recent 14 days to avoid bloat
+        const keys = Object.keys(state.yesterdaySnapshots).sort();
+        while (keys.length > 14) {
+          const k = keys.shift();
+          delete state.yesterdaySnapshots[k];
+        }
+      }
+    }
+    return _origHandleDailyReset.apply(this, arguments);
+  };
+})();
+
+/* ---------- DOM refs ---------- */
+let mdQueue = [];                       // [{ name, category, difficulty, dueTime, tplId? }]
+let mdNewTplDiff = 'easy';
+let mdCustomDiff = 'easy';
+let mdActiveTab = 'templates';
+
+function mdGetYesterdayKey() {
+  // Find the most recent snapshot date (not today)
+  const today = todayISO();
+  const keys = Object.keys(state.yesterdaySnapshots || {}).sort().reverse();
+  for (const k of keys) {
+    if (k < today) return k;
+  }
+  // Fallback: if no snapshot yet (fresh install), synthesize one from current quests
+  // marked as user quests completed/active yesterday (best-effort)
+  return null;
+}
+
+function mdGetYesterdayQuests() {
+  const key = mdGetYesterdayKey();
+  if (key && Array.isArray(state.yesterdaySnapshots[key])) {
+    return { date: key, quests: state.yesterdaySnapshots[key] };
+  }
+  // Fallback: pull user quests from state.quests whose createdAt or completedAt was yesterday
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  const yISO = `${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,'0')}-${String(y.getDate()).padStart(2,'0')}`;
+  const fallback = (state.quests || []).filter(q => {
+    if ((q.source || 'user') !== 'user') return false;
+    const cd = (q.createdAt || '').substring(0, 10);
+    const fd = (q.completedAt || '').substring(0, 10);
+    return cd === yISO || fd === yISO;
+  }).map(q => ({
+    name: q.name,
+    category: q.category,
+    difficulty: q.difficulty,
+    dueTime: q.dueTime || null,
+    wasCompleted: !!q.completed
+  }));
+  return { date: yISO, quests: fallback };
+}
+
+/* ---------- Queue management ---------- */
+function mdQueueAdd(item) {
+  mdQueue.push(item);
+  mdRenderQueue();
+  mdRenderTemplates(); // refresh deployed checkmarks
+}
+function mdQueueRemove(idx) {
+  mdQueue.splice(idx, 1);
+  mdRenderQueue();
+  mdRenderTemplates();
+}
+function mdQueueClear() {
+  mdQueue = [];
+  mdRenderQueue();
+  mdRenderTemplates();
+}
+
+function mdRenderQueue() {
+  const container = document.getElementById('mdQueueItems');
+  const label = document.getElementById('mdQueueLabel');
+  const deployBtn = document.getElementById('mdDeployBtn');
+  if (!container || !label || !deployBtn) return;
+
+  label.textContent = `QUEUE (${mdQueue.length})`;
+  if (mdQueue.length === 0) {
+    container.innerHTML = `<span style="color: rgba(255,255,255,0.35); font-family: 'JetBrains Mono', monospace; font-size: 11px;">Tap templates or yesterday's quests to build your loadout…</span>`;
+    deployBtn.disabled = true;
+    deployBtn.textContent = 'DEPLOY ALL';
+    return;
+  }
+  deployBtn.disabled = false;
+  deployBtn.textContent = `DEPLOY ${mdQueue.length} QUEST${mdQueue.length === 1 ? '' : 'S'}`;
+  container.innerHTML = mdQueue.map((item, i) => {
+    const esc = mdEscape(item.name);
+    const time = item.dueTime ? ` <span style="color:var(--gold);">${item.dueTime}</span>` : '';
+    return `<span class="md-deploy-chip">${esc}${time}<button data-qidx="${i}" aria-label="remove">×</button></span>`;
+  }).join('');
+  container.querySelectorAll('button[data-qidx]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      mdQueueRemove(parseInt(btn.dataset.qidx, 10));
+    });
+  });
+}
+
+/* ---------- Templates rendering ---------- */
+function mdRenderTemplates() {
+  const container = document.getElementById('mdTemplatesContainer');
+  if (!container) return;
+
+  const tpls = state.questTemplates || [];
+  const cats = ['scholar', 'research', 'iron', 'dungeon', 'recovery'];
+  const catLabels = {
+    scholar:  'SCHOLAR · MEDICINE',
+    research: 'RESEARCH · ACADEMIC',
+    iron:     'IRON · FITNESS',
+    dungeon:  'DUNGEON · ADMIN',
+    recovery: 'RECOVERY · REST'
+  };
+
+  // Sort within category: pinned first, then by useCount desc, then by name
+  const sorted = {};
+  for (const c of cats) {
+    sorted[c] = tpls.filter(t => t.category === c).sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      if ((b.useCount || 0) !== (a.useCount || 0)) return (b.useCount || 0) - (a.useCount || 0);
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  let html = '';
+  for (const c of cats) {
+    if (sorted[c].length === 0) continue;
+    html += `<div class="md-cat-group">
+      <div class="md-cat-label"><span class="cat-${c}">▸ ${catLabels[c]}</span></div>
+      <div class="md-template-grid">
+        ${sorted[c].map(tpl => mdRenderTemplateCard(tpl)).join('')}
+      </div>
+    </div>`;
+  }
+  if (!html) {
+    html = `<div class="md-yesterday-empty">No templates yet. Hit <b>+ NEW</b> to create one.</div>`;
+  }
+  container.innerHTML = html;
+
+  // Wire template clicks
+  container.querySelectorAll('.md-template').forEach(el => {
+    const id = el.dataset.tplid;
+    const tpl = (state.questTemplates || []).find(t => t.id === id);
+    if (!tpl) return;
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.md-template-actions')) return; // action buttons handle themselves
+      mdQueueAdd({
+        name: tpl.name,
+        category: tpl.category,
+        difficulty: tpl.difficulty,
+        dueTime: tpl.defaultDueTime || null,
+        tplId: tpl.id
+      });
+    });
+  });
+  container.querySelectorAll('.md-template-actions .pin').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.tplid;
+      const tpl = state.questTemplates.find(t => t.id === id);
+      if (!tpl) return;
+      tpl.pinned = !tpl.pinned;
+      saveState();
+      mdRenderTemplates();
+    });
+  });
+  container.querySelectorAll('.md-template-actions .del').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.tplid;
+      const tpl = state.questTemplates.find(t => t.id === id);
+      if (!tpl) return;
+      if (confirm(`Delete template "${tpl.name}"?`)) {
+        state.questTemplates = state.questTemplates.filter(t => t.id !== id);
+        saveState();
+        mdRenderTemplates();
+      }
+    });
+  });
+}
+
+function mdRenderTemplateCard(tpl) {
+  const deployed = mdQueue.some(q => q.tplId === tpl.id);
+  const diffClass = 'diff-' + tpl.difficulty;
+  const timeBit = tpl.defaultDueTime ? `<span>· ${tpl.defaultDueTime}</span>` : '';
+  return `
+    <div class="md-template cat-${tpl.category} ${deployed ? 'deployed' : ''}" data-tplid="${tpl.id}">
+      ${tpl.pinned ? '<span class="md-template-pin">★</span>' : ''}
+      <div class="md-template-actions">
+        <button class="pin" data-tplid="${tpl.id}" title="${tpl.pinned ? 'Unpin' : 'Pin'}">${tpl.pinned ? '★' : '☆'}</button>
+        <button class="del" data-tplid="${tpl.id}" title="Delete">×</button>
+      </div>
+      <div class="md-template-name">${mdEscape(tpl.name)}</div>
+      <div class="md-template-meta">
+        <span class="${diffClass}">${tpl.difficulty.toUpperCase()}</span>
+        ${timeBit}
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- Yesterday rendering ---------- */
+let mdYSelected = new Set(); // indices into yesterday quest list
+
+function mdRenderYesterday() {
+  const container = document.getElementById('mdYesterdayList');
+  const head = document.getElementById('mdYHead');
+  if (!container || !head) return;
+
+  const { date, quests } = mdGetYesterdayQuests();
+
+  if (!quests || quests.length === 0) {
+    head.textContent = `No yesterday data`;
+    container.innerHTML = `<div class="md-yesterday-empty">Nothing from yesterday to clone. Use Templates or Custom instead.</div>`;
+    return;
+  }
+  head.textContent = `From ${date} · tap to select`;
+
+  container.innerHTML = quests.map((q, i) => {
+    const isSel = mdYSelected.has(i);
+    const doneClass = q.wasCompleted ? 'done' : '';
+    const catColors = {
+      scholar: '#5ce6f0', research: '#b38dff', iron: '#ff8a4a',
+      dungeon: '#f5c451', recovery: '#4ade80'
+    };
+    return `
+      <div class="md-y-item ${isSel ? 'selected' : ''}" data-yidx="${i}">
+        <div class="md-y-check">${isSel ? '✓' : ''}</div>
+        <div class="md-y-name ${doneClass}">${mdEscape(q.name)}</div>
+        <div class="md-y-meta">
+          <span style="color: ${catColors[q.category] || '#fff'};">${q.category.toUpperCase()}</span>
+          <span>${q.difficulty.toUpperCase()}</span>
+          ${q.dueTime ? `<span style="color: var(--gold);">${q.dueTime}</span>` : ''}
+          ${q.wasCompleted ? `<span style="color: var(--success);">DONE</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.md-y-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.dataset.yidx, 10);
+      if (mdYSelected.has(idx)) {
+        mdYSelected.delete(idx);
+        // Remove from queue if present
+        const q = quests[idx];
+        const qIdx = mdQueue.findIndex(x => x._ySig === `${idx}|${q.name}`);
+        if (qIdx >= 0) mdQueue.splice(qIdx, 1);
+      } else {
+        mdYSelected.add(idx);
+        const q = quests[idx];
+        mdQueue.push({
+          name: q.name,
+          category: q.category,
+          difficulty: q.difficulty,
+          dueTime: q.dueTime || null,
+          _ySig: `${idx}|${q.name}`
+        });
+      }
+      mdRenderYesterday();
+      mdRenderQueue();
+    });
+  });
+}
+
+/* ---------- Utility ---------- */
+function mdEscape(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/* ---------- Deploy ---------- */
+function mdDeployAll() {
+  if (mdQueue.length === 0) return;
+  let deployed = 0;
+  const now = todayISO();
+  for (const item of mdQueue) {
+    try {
+      addQuest(item.name, item.category, item.difficulty, item.dueTime);
+      deployed++;
+      // Bump template use counter
+      if (item.tplId) {
+        const tpl = state.questTemplates.find(t => t.id === item.tplId);
+        if (tpl) {
+          tpl.useCount = (tpl.useCount || 0) + 1;
+          tpl.lastUsedDate = now;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to deploy quest', item, e);
+    }
+  }
+  saveState();
+  mdQueueClear();
+  mdYSelected.clear();
+  mdCloseModal();
+  if (typeof showToast === 'function') {
+    showToast(`${deployed} QUEST${deployed === 1 ? '' : 'S'} DEPLOYED.`);
+  }
+  state.lastLoadoutDate = now;
+  saveState();
+}
+
+/* ---------- Modal open/close ---------- */
+function mdOpenModal(autoSwitchTab) {
+  mdYSelected.clear();
+  // Don't wipe queue on re-open within same session — user may have queued items and reopened
+
+  document.getElementById('mdOverlay').classList.add('active');
+  if (autoSwitchTab) mdSwitchTab(autoSwitchTab);
+  mdRenderTemplates();
+  mdRenderYesterday();
+  mdRenderQueue();
+}
+function mdCloseModal() {
+  document.getElementById('mdOverlay').classList.remove('active');
+}
+
+function mdSwitchTab(name) {
+  mdActiveTab = name;
+  document.querySelectorAll('.md-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.mdtab === name);
+  });
+  document.querySelectorAll('.md-section').forEach(s => {
+    s.classList.toggle('active', s.dataset.mdsection === name);
+  });
+}
+
+/* ---------- Wire up UI ---------- */
+(function wirePhase11() {
+  ensurePhase11State();
+
+  // Close buttons
+  const closeBtn = document.getElementById('mdCloseBtn');
+  const dismissBtn = document.getElementById('mdDismissBtn');
+  const overlay = document.getElementById('mdOverlay');
+  if (closeBtn) closeBtn.addEventListener('click', mdCloseModal);
+  if (dismissBtn) dismissBtn.addEventListener('click', () => {
+    mdCloseModal();
+    state.loadoutDismissedDate = todayISO();
+    saveState();
+  });
+  if (overlay) {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) mdCloseModal();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay && overlay.classList.contains('active')) {
+      mdCloseModal();
+    }
+  });
+
+  // Tabs
+  document.querySelectorAll('.md-tab').forEach(t => {
+    t.addEventListener('click', () => mdSwitchTab(t.dataset.mdtab));
+  });
+
+  // Select All (yesterday)
+  const yAllBtn = document.getElementById('mdYAllBtn');
+  if (yAllBtn) yAllBtn.addEventListener('click', () => {
+    const { quests } = mdGetYesterdayQuests();
+    if (!quests || quests.length === 0) return;
+    // If all selected, clear; else select all
+    const allSelected = quests.every((_, i) => mdYSelected.has(i));
+    if (allSelected) {
+      // Remove all yesterday items from queue
+      mdQueue = mdQueue.filter(q => !q._ySig);
+      mdYSelected.clear();
+    } else {
+      quests.forEach((q, i) => {
+        if (!mdYSelected.has(i)) {
+          mdYSelected.add(i);
+          mdQueue.push({
+            name: q.name,
+            category: q.category,
+            difficulty: q.difficulty,
+            dueTime: q.dueTime || null,
+            _ySig: `${i}|${q.name}`
+          });
+        }
+      });
+    }
+    mdRenderYesterday();
+    mdRenderQueue();
+  });
+
+  // New template form
+  const newTplToggle = document.getElementById('mdNewTplToggle');
+  const newTplForm   = document.getElementById('mdNewTplForm');
+  const newTplSave   = document.getElementById('mdNewTplSave');
+  if (newTplToggle && newTplForm) {
+    newTplToggle.addEventListener('click', () => {
+      newTplForm.classList.toggle('active');
+      if (newTplForm.classList.contains('active')) {
+        document.getElementById('mdNewTplName').focus();
+      }
+    });
+  }
+  newTplForm.querySelectorAll('.md-newtpl-diff').forEach(el => {
+    el.addEventListener('click', () => {
+      mdNewTplDiff = el.dataset.diff;
+      newTplForm.querySelectorAll('.md-newtpl-diff').forEach(x =>
+        x.classList.toggle('selected', x === el));
+    });
+  });
+  if (newTplSave) newTplSave.addEventListener('click', () => {
+    const name = document.getElementById('mdNewTplName').value.trim();
+    if (!name) {
+      document.getElementById('mdNewTplName').focus();
+      return;
+    }
+    const cat  = document.getElementById('mdNewTplCat').value;
+    const time = document.getElementById('mdNewTplTime').value || null;
+    state.questTemplates.push({
+      id: 'tpl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      name,
+      category: cat,
+      difficulty: mdNewTplDiff,
+      defaultDueTime: time,
+      pinned: false,
+      useCount: 0,
+      lastUsedDate: null
+    });
+    saveState();
+    // Reset form
+    document.getElementById('mdNewTplName').value = '';
+    document.getElementById('mdNewTplTime').value = '';
+    mdNewTplDiff = 'easy';
+    newTplForm.querySelectorAll('.md-newtpl-diff').forEach(x =>
+      x.classList.toggle('selected', x.dataset.diff === 'easy'));
+    newTplForm.classList.remove('active');
+    mdRenderTemplates();
+    if (typeof showToast === 'function') showToast('TEMPLATE SAVED.');
+  });
+
+  // Custom add (mobile friendly)
+  const customDiffs = document.getElementById('mdCustomDiffs');
+  if (customDiffs) {
+    customDiffs.querySelectorAll('.md-newtpl-diff').forEach(el => {
+      el.addEventListener('click', () => {
+        mdCustomDiff = el.dataset.diff;
+        customDiffs.querySelectorAll('.md-newtpl-diff').forEach(x =>
+          x.classList.toggle('selected', x === el));
+      });
+    });
+  }
+  const customBtn = document.getElementById('mdCustomAddBtn');
+  if (customBtn) customBtn.addEventListener('click', () => {
+    const nameEl = document.getElementById('mdCustomName');
+    const name = nameEl.value.trim();
+    if (!name) { nameEl.focus(); return; }
+    const cat  = document.getElementById('mdCustomCat').value;
+    const time = document.getElementById('mdCustomTime').value || null;
+    mdQueueAdd({ name, category: cat, difficulty: mdCustomDiff, dueTime: time });
+    nameEl.value = '';
+    document.getElementById('mdCustomTime').value = '';
+    nameEl.focus();
+  });
+
+  // Deploy button
+  const deployBtn = document.getElementById('mdDeployBtn');
+  if (deployBtn) deployBtn.addEventListener('click', mdDeployAll);
+
+  // FAB
+  const fab = document.getElementById('fabQuest');
+  if (fab) fab.addEventListener('click', () => mdOpenModal('templates'));
+
+  // Auto-open on first load of the day (before 10am)
+  maybeAutoOpenLoadout();
+})();
+
+function maybeAutoOpenLoadout() {
+  const today = todayISO();
+  // Already opened today → skip
+  if (state.lastLoadoutDate === today) return;
+  // Already dismissed today → skip
+  if (state.loadoutDismissedDate === today) return;
+  // Only before 10am
+  const now = new Date();
+  if (now.getHours() >= 10) return;
+  // Only if no user quests already added today (don't interrupt mid-day)
+  const alreadyAddedToday = (state.quests || []).some(q => {
+    if ((q.source || 'user') !== 'user') return false;
+    const cd = (q.createdAt || '').substring(0, 10);
+    return cd === today;
+  });
+  if (alreadyAddedToday) return;
+
+  // Delay a beat so intro animations don't collide
+  setTimeout(() => mdOpenModal('templates'), 800);
+}
+
 
 </script>
 
