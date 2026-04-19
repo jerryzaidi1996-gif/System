@@ -10119,6 +10119,385 @@ body {
   .md-tab { font-size: 10px; letter-spacing: 1.5px; padding: 8px 4px; }
 }
 
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 11.1 — ACTION DOCK + TEMPLATE EDIT
+   Collapses feed / settings / export / quest into one dock
+   ═══════════════════════════════════════════════════════ */
+
+/* Dock anchor — the always-visible button that toggles the dock open */
+.action-dock-anchor {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(10,14,26,0.95) 0%, rgba(2,3,9,0.95) 100%);
+  border: 1px solid rgba(92, 230, 240, 0.5);
+  outline: 1px solid rgba(92, 230, 240, 0.15);
+  outline-offset: 3px;
+  color: var(--cyan, #5ce6f0);
+  cursor: pointer;
+  z-index: 850;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  box-shadow: 0 4px 20px rgba(92, 230, 240, 0.35), inset 0 1px 2px rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.2s, border-color 0.2s;
+}
+.action-dock-anchor:hover {
+  border-color: var(--cyan, #5ce6f0);
+  box-shadow: 0 4px 26px rgba(92, 230, 240, 0.6);
+}
+.action-dock-anchor:active { transform: scale(0.93); }
+.action-dock-anchor.open {
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, rgba(92, 230, 240, 0.2) 0%, rgba(92, 230, 240, 0.05) 100%);
+}
+
+.action-dock-anchor-icon {
+  text-shadow: 0 0 8px rgba(92, 230, 240, 0.6);
+  line-height: 1;
+}
+
+/* Badge on the anchor (aggregates feed count + any attention needed) */
+.action-dock-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--danger, #ff4757);
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+}
+.action-dock-badge.visible { display: flex; }
+.action-dock-anchor.open .action-dock-badge { display: none; }
+
+/* Backdrop that appears when dock is open (mobile) */
+.action-dock-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 3, 9, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 840;
+  display: none;
+  animation: fadeIn 0.2s ease;
+}
+.action-dock-backdrop.visible { display: block; }
+
+/* OVERRIDE the four original fixed buttons so they become dock children.
+   Keep them hidden until the dock is "open", then fan them out vertically. */
+.feed-toggle,
+.settings-toggle,
+.quick-export-toggle,
+.fab-quest {
+  /* override the fixed positioning from phase 10/11 */
+  position: fixed !important;
+  right: 20px !important;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  z-index: 845 !important;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px) scale(0.6);
+  transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.2s;
+}
+
+/* Staggered fan-out positions (above the anchor at bottom:20px) */
+body.dock-open .fab-quest {
+  bottom: 88px !important;   /* 1st slot (closest to anchor) */
+  opacity: 1; pointer-events: auto;
+  transform: translateY(0) scale(1);
+  transition-delay: 0.02s;
+}
+body.dock-open .feed-toggle {
+  bottom: 146px !important;  /* 2nd slot */
+  opacity: 1; pointer-events: auto;
+  transform: translateY(0) scale(1);
+  transition-delay: 0.06s;
+}
+body.dock-open .quick-export-toggle {
+  bottom: 204px !important;  /* 3rd slot */
+  opacity: 1; pointer-events: auto;
+  transform: translateY(0) scale(1);
+  transition-delay: 0.10s;
+}
+body.dock-open .settings-toggle {
+  bottom: 262px !important;  /* 4th slot (farthest) */
+  opacity: 1; pointer-events: auto;
+  transform: translateY(0) scale(1);
+  transition-delay: 0.14s;
+}
+
+/* Tighter sizing on the dock buttons to match the new smaller 48px scale */
+.feed-toggle .feed-toggle-icon { font-size: 20px !important; }
+.settings-toggle .settings-toggle-icon { font-size: 18px !important; }
+.quick-export-toggle .quick-export-toggle-icon { font-size: 16px !important; }
+
+/* Make the FAB look like the other dock siblings when docked (not giant gradient) */
+.fab-quest {
+  background: linear-gradient(135deg, rgba(10,14,26,0.95) 0%, rgba(2,3,9,0.95) 100%) !important;
+  border: 1px solid var(--cyan, #5ce6f0) !important;
+  color: var(--cyan, #5ce6f0) !important;
+  font-size: 24px !important;
+  box-shadow: 0 0 12px rgba(92, 230, 240, 0.4) !important;
+  display: flex !important;  /* cancel the phase-11 mobile-only @media rule */
+}
+.fab-quest:active { transform: translateY(0) scale(0.9) !important; }
+
+/* Labels that appear next to each dock button when open, for clarity */
+.dock-label {
+  position: fixed;
+  right: 78px;
+  height: 48px;
+  display: none;
+  align-items: center;
+  padding: 0 12px;
+  background: rgba(2, 3, 9, 0.9);
+  border: 1px solid rgba(92, 230, 240, 0.3);
+  color: rgba(255, 255, 255, 0.85);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  z-index: 844;
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+body.dock-open .dock-label {
+  display: flex;
+  opacity: 1;
+  transform: translateX(0);
+}
+.dock-label[data-slot="1"] { bottom: 88px;  transition-delay: 0.08s; }
+.dock-label[data-slot="2"] { bottom: 146px; transition-delay: 0.12s; }
+.dock-label[data-slot="3"] { bottom: 204px; transition-delay: 0.16s; }
+.dock-label[data-slot="4"] { bottom: 262px; transition-delay: 0.20s; }
+
+/* Hide labels on very narrow screens to avoid crowding */
+@media (max-width: 500px) {
+  .dock-label { display: none !important; }
+}
+
+/* ---------- Phase 11.1 — Template Edit Mode (iPhone friendly) ---------- */
+
+/* Make the existing template action buttons ALWAYS visible (previously only on hover,
+   which doesn't work on touch devices) */
+.md-template-actions {
+  opacity: 1 !important;
+}
+/* Bigger tap targets — 28px min for touch */
+.md-template-actions button {
+  width: 26px !important;
+  height: 26px !important;
+  font-size: 12px !important;
+  background: rgba(2, 3, 9, 0.7) !important;
+  backdrop-filter: blur(4px);
+}
+
+/* Add a third button (edit) — styled the same way, distinguished by color on hover */
+.md-template-actions button.edit:hover {
+  border-color: var(--gold, #f5c451) !important;
+  color: var(--gold, #f5c451) !important;
+}
+
+/* Give the template card a little more top-right padding so the three action buttons
+   don't cover the name */
+.md-template {
+  padding-top: 28px !important;
+  min-height: 74px !important;
+}
+.md-template-pin {
+  /* Pin star stays visible but moves to top-left instead of top-right */
+  left: 6px !important;
+  right: auto !important;
+}
+
+/* Edit-in-place form — same look as the "New Template" form */
+.md-edit-form {
+  display: none;
+  padding: 14px 12px;
+  margin: 8px 0 14px;
+  background: rgba(245, 196, 81, 0.06);
+  border: 1px dashed rgba(245, 196, 81, 0.45);
+  flex-direction: column;
+  gap: 10px;
+  animation: slideInUp 0.25s ease;
+}
+.md-edit-form.active { display: flex; }
+.md-edit-form .md-edit-form-head {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--gold, #f5c451);
+  text-transform: uppercase;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.md-edit-form input,
+.md-edit-form select {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(2,3,9,0.75);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.92);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  box-sizing: border-box;
+  /* iOS: prevent auto-zoom on focus (font-size < 16px triggers zoom) — 14 is borderline, bump if needed */
+}
+.md-edit-form input:focus,
+.md-edit-form select:focus { outline: none; border-color: var(--cyan, #5ce6f0); }
+.md-edit-form .md-edit-row { display: flex; gap: 8px; }
+.md-edit-form .md-edit-row > * { flex: 1; }
+.md-edit-form .md-edit-diffs { display: flex; gap: 4px; }
+.md-edit-form .md-edit-diff {
+  flex: 1;
+  padding: 10px 6px;
+  background: rgba(2,3,9,0.7);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.75);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  text-align: center;
+  text-transform: uppercase;
+}
+.md-edit-form .md-edit-diff.selected {
+  border-color: var(--cyan, #5ce6f0);
+  color: var(--cyan, #5ce6f0);
+  background: rgba(92, 230, 240, 0.1);
+}
+.md-edit-form .md-edit-actions {
+  display: flex; gap: 8px;
+}
+.md-edit-form .md-edit-btn {
+  flex: 1;
+  padding: 10px;
+  background: rgba(92, 230, 240, 0.15);
+  border: 1px solid var(--cyan, #5ce6f0);
+  color: var(--cyan, #5ce6f0);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.md-edit-form .md-edit-btn.cancel {
+  border-color: rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.7);
+  background: transparent;
+}
+.md-edit-form .md-edit-btn:hover { background: rgba(92, 230, 240, 0.25); }
+.md-edit-form .md-edit-btn.cancel:hover { border-color: rgba(255,255,255,0.6); color: #fff; }
+
+/* Template card highlight when being edited */
+.md-template.editing {
+  border-color: var(--gold, #f5c451) !important;
+  background: rgba(245, 196, 81, 0.08) !important;
+}
+
+/* Prevent iOS Safari from zooming when tapping form inputs in the modal */
+@supports (-webkit-touch-callout: none) {
+  .md-edit-form input,
+  .md-edit-form select,
+  .md-newtpl-form input,
+  .md-newtpl-form select,
+  #mdCustomName,
+  #mdCustomCat,
+  #mdCustomTime {
+    font-size: 16px !important;
+  }
+}
+
+
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 11.2 — DOCK AUTO-HIDE STATE
+   ═══════════════════════════════════════════════════════ */
+.action-dock-anchor.dock-auto-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.6) translateY(20px);
+  transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+/* Make sure docked buttons also disappear if dock gets auto-hidden
+   (they rely on body.dock-open to animate in, but if something opens while the
+    dock was open, we want them to go away cleanly too) */
+body:not(.dock-open) .feed-toggle,
+body:not(.dock-open) .settings-toggle,
+body:not(.dock-open) .quick-export-toggle,
+body:not(.dock-open) .fab-quest {
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 11.3 — DOCK CONTENT GUTTER
+   Reserve bottom-right space in the main app container so
+   content never flows behind the floating dock anchor.
+   Also shrink the anchor slightly on phones.
+   ═══════════════════════════════════════════════════════ */
+
+/* Reserve a gutter below all app content equal to the dock's footprint.
+   Dock anchor: 56px tall + 20px bottom offset = 76px, plus breathing room */
+.app {
+  padding-bottom: 96px;
+}
+
+/* On mobile, shrink the anchor so it takes less real estate */
+@media (max-width: 860px) {
+  .action-dock-anchor {
+    width: 48px;
+    height: 48px;
+    bottom: 16px;
+    right: 16px;
+    font-size: 18px;
+  }
+  .app {
+    padding-bottom: 84px;
+  }
+  /* Recalculate staggered fan-out positions for smaller anchor */
+  body.dock-open .fab-quest             { bottom: 76px !important; }
+  body.dock-open .feed-toggle           { bottom: 130px !important; }
+  body.dock-open .quick-export-toggle   { bottom: 184px !important; }
+  body.dock-open .settings-toggle       { bottom: 238px !important; }
+  .dock-label[data-slot="1"] { bottom: 76px;  right: 74px; }
+  .dock-label[data-slot="2"] { bottom: 130px; right: 74px; }
+  .dock-label[data-slot="3"] { bottom: 184px; right: 74px; }
+  .dock-label[data-slot="4"] { bottom: 238px; right: 74px; }
+}
+
+/* Ensure inline content panels inside .app get the gutter even if they have
+   their own overflow — belt-and-suspenders */
+@media (max-width: 500px) {
+  .app { padding-bottom: 80px; }
+  .action-dock-anchor {
+    width: 46px;
+    height: 46px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -10909,6 +11288,25 @@ body {
 <button class="quick-export-toggle" id="quickExportToggle" title="Quick Export Backup" aria-label="Quick Export">
   <span class="quick-export-toggle-icon">⇩</span>
 </button>
+
+<!-- ═══════════════════════════════════════════════════════
+     PHASE 11.1 — ACTION DOCK ANCHOR
+     ═══════════════════════════════════════════════════════ -->
+
+<div class="action-dock-backdrop" id="actionDockBackdrop"></div>
+
+<!-- Dock labels (shown when dock is open, sit to the left of each docked button) -->
+<span class="dock-label" data-slot="1">ADD QUEST</span>
+<span class="dock-label" data-slot="2">MESSAGES</span>
+<span class="dock-label" data-slot="3">EXPORT</span>
+<span class="dock-label" data-slot="4">SETTINGS</span>
+
+<button class="action-dock-anchor" id="actionDockAnchor" aria-label="Open action dock">
+  <span class="action-dock-anchor-icon">+</span>
+  <span class="action-dock-badge" id="actionDockBadge">0</span>
+</button>
+
+
 
 <!-- SETTINGS MODAL — Phase 9.2 rebuild -->
 <div class="modal-overlay" id="settingsModal">
@@ -20456,6 +20854,307 @@ function maybeAutoOpenLoadout() {
   // Delay a beat so intro animations don't collide
   setTimeout(() => mdOpenModal('templates'), 800);
 }
+
+
+
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 11.1 — ACTION DOCK + TEMPLATE EDIT
+   ═══════════════════════════════════════════════════════ */
+
+/* ---------- Action Dock ---------- */
+(function wireActionDock() {
+  const anchor   = document.getElementById('actionDockAnchor');
+  const backdrop = document.getElementById('actionDockBackdrop');
+  const badge    = document.getElementById('actionDockBadge');
+  if (!anchor || !backdrop) return;
+
+  function openDock() {
+    document.body.classList.add('dock-open');
+    anchor.classList.add('open');
+    backdrop.classList.add('visible');
+  }
+  function closeDock() {
+    document.body.classList.remove('dock-open');
+    anchor.classList.remove('open');
+    backdrop.classList.remove('visible');
+  }
+  function toggleDock() {
+    if (document.body.classList.contains('dock-open')) closeDock();
+    else openDock();
+  }
+
+  anchor.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleDock();
+  });
+  backdrop.addEventListener('click', closeDock);
+
+  // Close dock when any docked button is clicked — user wants to use the action, not stare at it
+  ['fabQuest', 'feedToggle', 'settingsToggle', 'quickExportToggle'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', () => {
+      // Small delay so the click lands on the intended element first
+      setTimeout(closeDock, 50);
+    });
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.body.classList.contains('dock-open')) {
+      closeDock();
+    }
+  });
+
+  // Badge updater — watch for the feed count and reflect it on the anchor
+  function updateDockBadge() {
+    if (!badge) return;
+    const feedCountEl = document.getElementById('feedCount');
+    let count = 0;
+    if (feedCountEl) {
+      const n = parseInt(feedCountEl.textContent, 10);
+      if (!isNaN(n)) count = n;
+    }
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : String(count);
+      badge.classList.add('visible');
+    } else {
+      badge.classList.remove('visible');
+    }
+  }
+  // Observe the feed count element and mirror it on the anchor badge
+  const feedCountEl = document.getElementById('feedCount');
+  if (feedCountEl && typeof MutationObserver !== 'undefined') {
+    const mo = new MutationObserver(updateDockBadge);
+    mo.observe(feedCountEl, { childList: true, characterData: true, subtree: true });
+  }
+  // Initial update + periodic refresh as a safety net
+  updateDockBadge();
+  setInterval(updateDockBadge, 3000);
+})();
+
+/* ---------- Phase 11.1 — Template Edit Mode ---------- */
+
+let mdEditingTplId = null;
+let mdEditDiff = 'easy';
+
+/* Override the renderTemplateCard to include an edit button.
+   We do it by monkey-patching after render, to avoid touching the original function. */
+(function addEditButtonsToTemplates() {
+  if (typeof mdRenderTemplates !== 'function') return;
+  const _orig = mdRenderTemplates;
+  window.mdRenderTemplates = function() {
+    _orig.apply(this, arguments);
+    // After default render, inject the edit button into each template-actions cluster
+    const container = document.getElementById('mdTemplatesContainer');
+    if (!container) return;
+
+    container.querySelectorAll('.md-template').forEach(card => {
+      const actions = card.querySelector('.md-template-actions');
+      if (!actions) return;
+      // Don't double-add
+      if (actions.querySelector('button.edit')) return;
+      const id = card.dataset.tplid;
+      const editBtn = document.createElement('button');
+      editBtn.className = 'edit';
+      editBtn.dataset.tplid = id;
+      editBtn.title = 'Edit';
+      editBtn.setAttribute('aria-label', 'Edit template');
+      editBtn.textContent = '✎';
+      // Prepend so order is: edit, pin, delete
+      actions.insertBefore(editBtn, actions.firstChild);
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        mdOpenEditForm(id);
+      });
+    });
+
+    // If an edit form was open before this re-render, re-open it
+    if (mdEditingTplId) {
+      const stillExists = (state.questTemplates || []).some(t => t.id === mdEditingTplId);
+      if (stillExists) mdOpenEditForm(mdEditingTplId);
+      else mdEditingTplId = null;
+    }
+  };
+})();
+
+function mdOpenEditForm(tplId) {
+  const tpl = (state.questTemplates || []).find(t => t.id === tplId);
+  if (!tpl) return;
+
+  // Close any existing edit form first
+  const existing = document.querySelector('.md-edit-form.active');
+  if (existing) existing.remove();
+  document.querySelectorAll('.md-template.editing').forEach(c => c.classList.remove('editing'));
+
+  mdEditingTplId = tplId;
+  mdEditDiff = tpl.difficulty;
+
+  // Find the card and mark it
+  const card = document.querySelector(`.md-template[data-tplid="${tplId}"]`);
+  if (!card) return;
+  card.classList.add('editing');
+
+  // Build the edit form
+  const form = document.createElement('div');
+  form.className = 'md-edit-form active';
+  form.dataset.tplid = tplId;
+  form.innerHTML = `
+    <div class="md-edit-form-head">
+      <span>EDITING · ${mdEscape(tpl.name)}</span>
+      <button class="md-close-btn" style="width: 24px; height: 24px; font-size: 14px;" data-close="1">×</button>
+    </div>
+    <input type="text" class="md-edit-name" placeholder="Template name…" maxlength="80" value="${mdEscape(tpl.name)}" />
+    <div class="md-edit-row">
+      <select class="md-edit-cat">
+        <option value="scholar"${tpl.category === 'scholar' ? ' selected' : ''}>Scholar — Medicine / Boards</option>
+        <option value="research"${tpl.category === 'research' ? ' selected' : ''}>Research — Academic</option>
+        <option value="iron"${tpl.category === 'iron' ? ' selected' : ''}>Iron — Fitness</option>
+        <option value="dungeon"${tpl.category === 'dungeon' ? ' selected' : ''}>Dungeon — Chores / Admin</option>
+        <option value="recovery"${tpl.category === 'recovery' ? ' selected' : ''}>Recovery — Rest / Self-Care</option>
+      </select>
+      <input type="time" class="md-edit-time" value="${tpl.defaultDueTime || ''}" />
+    </div>
+    <div class="md-edit-diffs">
+      <div class="md-edit-diff ${tpl.difficulty === 'easy'   ? 'selected' : ''}" data-diff="easy">EASY · 15</div>
+      <div class="md-edit-diff ${tpl.difficulty === 'medium' ? 'selected' : ''}" data-diff="medium">MED · 40</div>
+      <div class="md-edit-diff ${tpl.difficulty === 'hard'   ? 'selected' : ''}" data-diff="hard">HARD · 80</div>
+      <div class="md-edit-diff ${tpl.difficulty === 'boss'   ? 'selected' : ''}" data-diff="boss">BOSS · 250</div>
+    </div>
+    <div class="md-edit-actions">
+      <button class="md-edit-btn cancel" data-close="1">CANCEL</button>
+      <button class="md-edit-btn save">SAVE CHANGES</button>
+    </div>
+  `;
+
+  // Insert the form directly after the card's parent grid row — easiest: insert after the card itself
+  card.insertAdjacentElement('afterend', form);
+
+  // Wire difficulty selector
+  form.querySelectorAll('.md-edit-diff').forEach(el => {
+    el.addEventListener('click', () => {
+      mdEditDiff = el.dataset.diff;
+      form.querySelectorAll('.md-edit-diff').forEach(x =>
+        x.classList.toggle('selected', x === el));
+    });
+  });
+
+  // Wire close/cancel
+  form.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      mdCloseEditForm();
+    });
+  });
+
+  // Wire save
+  form.querySelector('.md-edit-btn.save').addEventListener('click', () => {
+    const name = form.querySelector('.md-edit-name').value.trim();
+    if (!name) {
+      form.querySelector('.md-edit-name').focus();
+      return;
+    }
+    const cat  = form.querySelector('.md-edit-cat').value;
+    const time = form.querySelector('.md-edit-time').value || null;
+    // Apply
+    tpl.name = name;
+    tpl.category = cat;
+    tpl.difficulty = mdEditDiff;
+    tpl.defaultDueTime = time;
+    saveState();
+    mdEditingTplId = null;
+    mdRenderTemplates();  // re-render the whole grid
+    if (typeof showToast === 'function') showToast('TEMPLATE UPDATED.');
+  });
+
+  // Scroll into view
+  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function mdCloseEditForm() {
+  const existing = document.querySelector('.md-edit-form.active');
+  if (existing) existing.remove();
+  document.querySelectorAll('.md-template.editing').forEach(c => c.classList.remove('editing'));
+  mdEditingTplId = null;
+}
+
+/* Re-render templates once on load so the edit buttons exist if the modal is opened */
+if (typeof mdRenderTemplates === 'function') {
+  try { mdRenderTemplates(); } catch (e) { /* silent — modal may not be open */ }
+}
+
+
+
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 11.2 — DOCK AUTO-HIDE
+   Hide the dock anchor + backdrop whenever another panel or
+   modal is visible so it never blocks content.
+   ═══════════════════════════════════════════════════════ */
+(function wireDockAutoHide() {
+  const anchor   = document.getElementById('actionDockAnchor');
+  const backdrop = document.getElementById('actionDockBackdrop');
+  if (!anchor) return;
+
+  // Selectors for things that, when open, should hide the dock.
+  // We watch both "is this element marked active/open?" states.
+  const HIDE_WHEN_ACTIVE = [
+    // Feed side panel — uses .open
+    { sel: '#feedPanel', cls: 'open' },
+    // All overlays — use .active
+    { sel: '#mdOverlay', cls: 'active' },
+    { sel: '#settingsModal', cls: 'active' },
+    { sel: '#addQuestModal', cls: 'active' },
+    { sel: '.rca-overlay', cls: 'active' },
+    { sel: '.sprint-overlay', cls: 'active' },
+    { sel: '.dispatch-overlay', cls: 'active' },
+    { sel: '.regen-overlay', cls: 'active' },
+    { sel: '.debrief-overlay', cls: 'active' },
+    { sel: '.berserker-convert-overlay', cls: 'active' },
+    { sel: '.reset-ritual-overlay', cls: 'active' },
+    { sel: '.chronicle-drill-overlay', cls: 'active' },
+    { sel: '.unlock-overlay', cls: 'active' },
+    { sel: '.rankup-overlay', cls: 'active' }
+  ];
+
+  function anyOverlayVisible() {
+    for (const { sel, cls } of HIDE_WHEN_ACTIVE) {
+      const els = document.querySelectorAll(sel);
+      for (const el of els) {
+        if (el.classList.contains(cls)) return true;
+      }
+    }
+    return false;
+  }
+
+  function updateDockVisibility() {
+    const hide = anyOverlayVisible();
+    if (hide) {
+      anchor.classList.add('dock-auto-hidden');
+      if (backdrop) backdrop.classList.remove('visible');
+      // Also close the dock if it happens to be open
+      document.body.classList.remove('dock-open');
+      anchor.classList.remove('open');
+    } else {
+      anchor.classList.remove('dock-auto-hidden');
+    }
+  }
+
+  // Observe class changes on the body + all watched elements
+  const mo = new MutationObserver(updateDockVisibility);
+  // Watch every HIDE_WHEN_ACTIVE element we can find
+  HIDE_WHEN_ACTIVE.forEach(({ sel }) => {
+    document.querySelectorAll(sel).forEach(el => {
+      mo.observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
+  });
+  // Safety-net periodic check in case something opens an overlay by a path we didn't wire
+  setInterval(updateDockVisibility, 600);
+
+  // Initial run
+  updateDockVisibility();
+})();
 
 
 </script>
