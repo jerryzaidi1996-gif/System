@@ -22331,6 +22331,203 @@ function architectAppendToIntelPanel() {
    END PHASE 12 — THE ARCHITECT
    ═══════════════════════════════════════════════════════ */
 
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 12.1 — UX POLISH
+   ─────────────────────────────────────────────────────────
+   (A) Feed badge shows UNREAD count only — mark-read on open
+   (B) Feed panel z-index raised above the action dock so it
+       is no longer occluded; dock auto-closes when feed opens
+   (C) Morning Deploy template action buttons (edit / pin /
+       delete) enlarged from 26px → 36px for easier tapping
+   ═══════════════════════════════════════════════════════ */
+(function phase12_1Init() {
+
+  /* ---------- CSS overrides ---------- */
+  const css = `
+    /* (B) Feed panel must sit above the dock stack (anchor z:850, dock btns z:845/844) */
+    .feed-panel { z-index: 870 !important; }
+
+    /* While the feed panel is open, suppress the dock buttons and anchor so the
+       panel's right edge is never occluded. The anchor's own dock-auto-hidden
+       class already handles hiding cleanly. */
+    body.feed-open .feed-toggle,
+    body.feed-open .settings-toggle,
+    body.feed-open .quick-export-toggle,
+    body.feed-open .fab-quest,
+    body.feed-open .dock-label {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    body.feed-open .action-dock-anchor {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.6) translateY(20px);
+      transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    /* (C) Bigger Morning Deploy template action buttons — edit, pin, delete */
+    .md-template-actions {
+      gap: 6px !important;
+      top: 6px !important;
+      right: 6px !important;
+    }
+    .md-template-actions button {
+      width: 36px !important;
+      height: 36px !important;
+      font-size: 18px !important;
+      line-height: 1 !important;
+      border-radius: 4px;
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Expand the card's top padding so the larger buttons don't crowd the name */
+    .md-template {
+      padding-top: 46px !important;
+      min-height: 92px !important;
+    }
+    /* Shift the corner pin-star down a touch so it reads cleanly alongside the taller button row */
+    .md-template-pin {
+      top: 8px !important;
+      font-size: 12px !important;
+    }
+
+    /* Mobile tightening — keep buttons large, reduce card min-height slightly */
+    @media (max-width: 500px) {
+      .md-template-actions button {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 19px !important;
+      }
+      .md-template {
+        padding-top: 48px !important;
+        min-height: 94px !important;
+      }
+    }
+  `;
+  const styleEl = document.createElement('style');
+  styleEl.id = 'phase-12-1-styles';
+  styleEl.textContent = css;
+  document.head.appendChild(styleEl);
+
+
+  /* ---------- (A) UNREAD FEED COUNTER ---------- */
+
+  // Migration: backfill lastFeedViewedTs so legacy installs don't suddenly show "20"
+  function ensurePhase12_1State() {
+    if (typeof state.lastFeedViewedTs === 'undefined' || state.lastFeedViewedTs === null) {
+      // Treat all existing messages as read on first upgrade
+      state.lastFeedViewedTs = new Date().toISOString();
+    }
+  }
+  ensurePhase12_1State();
+
+  // Hook future loadState calls (covers imports / resets)
+  if (typeof loadState === 'function') {
+    const _origLoad = loadState;
+    // eslint-disable-next-line no-func-assign
+    loadState = function() {
+      _origLoad.apply(this, arguments);
+      ensurePhase12_1State();
+    };
+  }
+
+  function unreadFeedCount() {
+    if (!state.messageFeed || state.messageFeed.length === 0) return 0;
+    const cutoff = new Date(state.lastFeedViewedTs || 0).getTime();
+    let n = 0;
+    for (const msg of state.messageFeed) {
+      const t = new Date(msg.ts).getTime();
+      if (t > cutoff) n++;
+    }
+    return n;
+  }
+
+  // Override the badge counter inside renderFeed by observing the feedCount element
+  // and replacing its content with the unread count whenever the original render
+  // function rewrites it. Using a MutationObserver avoids touching renderFeed directly.
+  const feedCountEl = document.getElementById('feedCount');
+  if (feedCountEl) {
+    let syncing = false;
+    function syncBadge() {
+      if (syncing) return;
+      syncing = true;
+      const unread = unreadFeedCount();
+      const display = String(unread);
+      // Only rewrite if different to avoid observer churn
+      if (feedCountEl.textContent !== display) {
+        feedCountEl.textContent = display;
+      }
+      feedCountEl.setAttribute('data-count', display);
+      syncing = false;
+    }
+    // Observe — whenever renderFeed() writes the raw length, we immediately
+    // overwrite with the unread count.
+    const mo = new MutationObserver(() => syncBadge());
+    mo.observe(feedCountEl, { childList: true, characterData: true, subtree: true });
+    // Also run on a timer as a safety net (matches the dock badge cadence)
+    setInterval(syncBadge, 2000);
+    syncBadge();
+  }
+
+  /* ---------- Mark-as-read on feed open ---------- */
+  const feedToggleEl = document.getElementById('feedToggle');
+  const feedPanelEl  = document.getElementById('feedPanel');
+  const feedCloseEl  = document.getElementById('feedClose');
+
+  function markFeedRead() {
+    state.lastFeedViewedTs = new Date().toISOString();
+    saveState();
+    // Force badge re-sync
+    const el = document.getElementById('feedCount');
+    if (el) {
+      el.textContent = '0';
+      el.setAttribute('data-count', '0');
+    }
+    // Also update dock mirror
+    const dockBadge = document.querySelector('.action-dock-badge');
+    if (dockBadge) dockBadge.classList.remove('visible');
+  }
+
+  // Fire mark-read whenever the panel transitions to open
+  if (feedPanelEl) {
+    // Watch for the 'open' class being added
+    const panelObserver = new MutationObserver(() => {
+      const isOpen = feedPanelEl.classList.contains('open');
+      document.body.classList.toggle('feed-open', isOpen);
+      if (isOpen) {
+        // Small delay so the panel reveal animation starts first
+        setTimeout(markFeedRead, 60);
+      }
+    });
+    panelObserver.observe(feedPanelEl, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  /* ---------- (B) Close dock when feed opens ---------- */
+  // The feed-toggle itself lives INSIDE the dock, so tapping it already fires
+  // the existing dock closeDock() via the pre-wired listener. But as a defensive
+  // measure, also ensure the dock closes if the feed panel opens through any
+  // other path (e.g. programmatic toggle).
+  if (feedPanelEl) {
+    const ensureDockClosed = new MutationObserver(() => {
+      if (feedPanelEl.classList.contains('open') && document.body.classList.contains('dock-open')) {
+        const anchor = document.querySelector('.action-dock-anchor');
+        const backdrop = document.querySelector('.action-dock-backdrop');
+        document.body.classList.remove('dock-open');
+        if (anchor) anchor.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('visible');
+      }
+    });
+    ensureDockClosed.observe(feedPanelEl, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  /* ---------- Dock badge mirrors unread count ---------- */
+  // The original updateDockBadge reads feedCount.textContent, which we've now
+  // replaced with unread count — so it just works. No further changes needed.
+
+})();
+
 </script>
 
 </body>
